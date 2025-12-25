@@ -1,3 +1,0 @@
-#!/bin/bash
-${SCALAR_SDK_HOME}/client/bin/scalardl register-cert --properties ./client.properties
-${SCALAR_SDK_HOME}/client/bin/scalardl register-contracts --properties ./client.properties --contracts-file ./conf/object-authenticity-management-contracts.toml
