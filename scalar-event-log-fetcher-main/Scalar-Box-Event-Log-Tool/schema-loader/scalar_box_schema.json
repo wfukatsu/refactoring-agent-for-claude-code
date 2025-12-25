@@ -1,0 +1,355 @@
+{
+  "scalar_box.events": {
+    "transaction": true,
+    "partition-key": [
+      "yyyy_mm_dd"
+    ],
+    "columns": {
+      "yyyy_mm_dd": "TEXT",
+      "timestamp": "TEXT",
+      "user_id": "BIGINT",
+      "user_name": "TEXT",
+      "user_email": "TEXT",
+      "asset_id": "TEXT",
+      "asset_age": "INT",
+      "item_id": "BIGINT",
+      "item_version_id": "BIGINT",
+      "sha1_hash": "TEXT",
+      "event_id": "TEXT",
+      "event_type": "TEXT",
+      "event_created_at": "BIGINT",
+      "event_occured_on": "TEXT",
+      "parent_folder_id": "BIGINT",
+      "source_json": "TEXT"
+    },
+    "clustering-key": [
+      "timestamp",
+      "user_id",
+      "event_id"
+    ],
+    "secondary-index": [
+      "event_id",
+      "event_type",
+      "item_id"
+    ]
+  },
+  "scalar_box.item_events": {
+    "transaction": true,
+    "partition-key": [
+      "item_id"
+    ],
+    "columns": {
+      "item_id": "BIGINT",
+      "item_version_id": "BIGINT",
+      "event_id": "TEXT",
+      "event_type": "TEXT",
+      "event_date": "BIGINT",
+      "event_json_data": "TEXT"
+    },
+    "clustering-key": [
+      "event_date",
+      "item_version_id"
+    ],
+    "secondary-index": [
+      "event_id"
+    ]
+  },
+  "scalar_box.position_tracker": {
+    "transaction": true,
+    "partition-key": [
+      "user_id"
+    ],
+    "columns": {
+      "user_id": "BIGINT",
+      "position": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "position"
+    ]
+  },
+  "scalar_box.audit_set": {
+    "transaction": true,
+    "partition-key": [
+      "audit_set_id"
+    ],
+    "columns": {
+      "audit_set_id": "TEXT",
+      "audit_set_name": "TEXT",
+      "description": "TEXT",
+      "owner_id": "BIGINT",
+      "owner_name": "TEXT",
+      "owner_email": "TEXT",
+      "acl_json": "TEXT",
+      "is_deleted": "BOOLEAN",
+      "createdAt": "BIGINT",
+      "audit_group_list_json": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "audit_set_name",
+      "is_deleted",
+      "owner_id",
+      "owner_email"
+    ]
+  },
+  "scalar_box.role_user": {
+    "transaction": true,
+    "partition-key": [
+      "role_name"
+    ],
+    "columns": {
+      "role_name": "TEXT",
+      "user_id": "BIGINT",
+      "user_name": "TEXT",
+      "user_email": "TEXT"
+    },
+    "clustering-key": [
+      "user_email"
+    ],
+    "secondary-index": [
+      "user_email",
+      "user_id"
+    ]
+  },
+  "scalar_box.audit_set_collaborators": {
+    "transaction": true,
+    "partition-key": [
+      "user_email"
+    ],
+    "columns": {
+      "audit_set_id": "TEXT",
+      "user_email": "TEXT",
+      "audit_set_name": "TEXT",
+      "user_name": "TEXT",
+      "audit_set_role": "TEXT",
+      "access_status": "TEXT",
+      "is_favourite": "BOOLEAN"
+    },
+    "clustering-key": [
+      "audit_set_id",
+      "audit_set_role"
+    ],
+    "secondary-index": [
+    ]
+  },
+  "scalar_box.user": {
+    "transaction": true,
+    "partition-key": [
+      "user_email"
+    ],
+    "columns": {
+      "user_email": "TEXT",
+      "id": "BIGINT",
+      "name": "TEXT",
+      "password": "TEXT",
+      "role_json": "TEXT",
+      "org_id": "TEXT",
+      "organization_name": "TEXT",
+      "image_url": "TEXT",
+      "is_deleted": "BOOLEAN",
+      "is_box_admin": "BOOLEAN",
+      "refresh_token": "TEXT",
+      "refresh_token_expiry": "BIGINT",
+      "language_code": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "id",
+      "is_deleted",
+      "org_id",
+      "refresh_token"
+    ]
+  },
+  "scalar_box.item_status": {
+    "transaction": true,
+    "partition-key": [
+      "item_id"
+    ],
+    "columns": {
+      "item_id": "BIGINT",
+      "item_type": "TEXT",
+      "status": "TEXT",
+      "last_validated_at": "TEXT",
+      "monitored_status": "TEXT",
+      "list_of_auditset_json": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "status",
+      "monitored_status"
+    ]
+  },
+  "scalar_box.items_by_sha1": {
+    "transaction": true,
+    "partition-key": [
+      "sha1_hash"
+    ],
+    "columns": {
+      "sha1_hash": "TEXT",
+      "item_id": "BIGINT",
+      "item_version_id": "BIGINT",
+      "item_version_number": "INT",
+      "item_name": "TEXT",
+      "owner_by_json": "TEXT",
+      "path": "TEXT",
+      "created_at": "BIGINT"
+    },
+    "clustering-key": [
+      "item_id",
+      "item_version_id"
+    ],
+    "secondary-index": [
+    ]
+  },
+  "scalar_box.auditset_folder_file_mapping": {
+    "transaction": true,
+    "partition-key": [
+      "audit_set_id"
+    ],
+    "columns": {
+      "audit_set_id": "TEXT",
+      "item_id": "BIGINT",
+      "item_name": "TEXT",
+      "item_type": "TEXT",
+      "access_list_type": "TEXT",
+      "list_json": "TEXT",
+      "created_at": "BIGINT",
+      "assigned_by_user_id": "BIGINT"
+    },
+    "clustering-key": [
+      "item_id"
+    ],
+    "secondary-index": [
+      "item_type",
+      "assigned_by_user_id"
+    ]
+  },
+  "scalar_box.auditor_logs": {
+    "transaction": true,
+    "partition-key": [
+      "audit_set_id"
+    ],
+    "columns": {
+      "audit_set_id": "TEXT",
+      "item_id": "BIGINT",
+      "user_email": "TEXT",
+      "event_type": "TEXT",
+      "event_date": "BIGINT",
+      "item_type": "TEXT",
+      "custom_json_eventDetails": "TEXT"
+    },
+    "clustering-key": [
+      "item_id",
+      "user_email",
+      "event_date"
+    ],
+    "secondary-index": [
+      "user_email"
+    ]
+  },
+  "scalar_box.user_token": {
+    "transaction": true,
+    "partition-key": [
+      "user_email"
+    ],
+    "columns": {
+      "user_email": "TEXT",
+      "refresh_token": "TEXT",
+      "access_token": "TEXT",
+      "access_token_expiry_date": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "refresh_token"
+    ]
+  },
+  "scalar_box.audit_group": {
+    "transaction": true,
+    "partition-key": [
+      "audit_group_id"
+    ],
+    "columns": {
+      "user_email": "TEXT",
+      "audit_group_id": "TEXT",
+      "audit_group_name": "TEXT",
+      "description": "TEXT",
+      "owner_id": "BIGINT",
+      "owner_name": "TEXT",
+      "member_list_json": "TEXT",
+      "created_at": "BIGINT",
+      "is_deleted": "BOOLEAN"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+      "is_deleted"
+    ]
+  },
+  "scalar_box.organization": {
+    "transaction": true,
+    "partition-key": [
+      "org_id"
+    ],
+    "columns": {
+      "org_id": "TEXT",
+      "organization_name": "TEXT"
+    },
+    "clustering-key": [
+    ],
+    "secondary-index": [
+    ]
+  },
+  "scalar_box.user_audit_group": {
+    "transaction": true,
+    "partition-key": [
+      "user_email"
+    ],
+    "columns": {
+      "user_email": "TEXT",
+      "audit_group_id": "TEXT",
+      "audit_group_name": "TEXT",
+      "privilege": "TEXT"
+    },
+    "clustering-key": [
+      "audit_group_id"
+    ],
+    "secondary-index": [
+    ]
+  },
+  "scalar_box.audit_grp_audit_set_mapping": {
+    "transaction": true,
+    "partition-key": [
+      "audit_group_id"
+    ],
+    "columns": {
+      "audit_group_id": "TEXT",
+      "audit_group_name": "TEXT",
+      "audit_set_id": "TEXT",
+      "audit_set_name": "TEXT"
+    },
+    "clustering-key": [
+      "audit_set_id"
+    ],
+    "secondary-index": [
+    ]
+  },
+  "scalar_box.user_otp": {
+    "transaction": true,
+    "partition-key": [
+      "user_email"
+    ],
+    "clustering-key": [
+    ],
+    "columns": {
+      "user_email": "TEXT",
+      "otp": "TEXT",
+      "expiry_date": "BIGINT"
+    }
+  }
+}
