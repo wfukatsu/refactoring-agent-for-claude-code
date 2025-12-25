@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Nunito", sans-serif;
+}
+
+
+.file-information-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 1rem;
+
+}
+
+/* Responsive layout - makes a one column layout instead of a two-column layout */
+@media (max-width: 500px) {
+    .file-information-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.folder-name-text {
+    font-weight: 700;
+    font-size: 18px;
+    color: black;
+}
+
+.file-path-name-text {
+    font-weight: 400;
+    font-size: 14px;
+}
+
+@media (min-width: 500px) {
+    .file-path-name-text {
+        margin-left: 20px;
+        font-size: 14px;
+    }
+}
+
+
+.filter-text {
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/*                                                                                      */
+
+.white-line {
+    
+    background-color: #00000040;
+    height: 1px;
+    margin: 1rem;
+}
+
+.date-pickerr {
+
+    border-color: #0061D5;
+    color: #0061D5;
+}
+
+.date-picker-lable-text {
+    background-color: #0061D5;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 2px;
+    border-radius: 10px;
+    color: white;
+}
+
+
+
+
+
+.custom-lable-row {
+    height: 100%;
+    width: 100%;
+    
+    border-radius: 6px;
+
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+}
+
+.fixed-bottom-right {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    top: unset;
+    left: unset;
+  }
+  
+
+
+
+.dropdown-css {
+
+    height: 100%;
+    width: 100%;
+
+    border-radius: 6px;
+
+    border: none;
+    outline: none;
+
+    /* appearance: none; */
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 17" fill="none"><path d="M8.00001 9.90437C7.91966 9.90437 7.84488 9.89155 7.77566 9.86591C7.70642 9.84026 7.64061 9.79624 7.57822 9.73386L4.58207 6.73771C4.48976 6.64541 4.44254 6.52938 4.44041 6.38964C4.43826 6.24989 4.48549 6.13173 4.58207 6.03516C4.67865 5.93858 4.79574 5.89029 4.93334 5.89029C5.07094 5.89029 5.18803 5.93858 5.28461 6.03516L8.00001 8.75056L10.7154 6.03516C10.8077 5.94286 10.9237 5.89563 11.0635 5.89349C11.2032 5.89136 11.3214 5.93858 11.4179 6.03516C11.5145 6.13173 11.5628 6.24883 11.5628 6.38644C11.5628 6.52404 11.5145 6.64113 11.4179 6.73771L8.42179 9.73386C8.3594 9.79624 8.29359 9.84026 8.22436 9.86591C8.15514 9.89155 8.08035 9.90437 8.00001 9.90437Z" fill="#0061D5"/></svg>') no-repeat;
+    /* Remove default appearance */
+    
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 16px;
+    letter-spacing: 0;
+    text-align: left;
+
+}
+
+.dropdown-css-options {
+
+    height: 500px;
+    width: 100%;
+    
+    border-radius: 6px;
+
+    border: none;
+    outline: none;
+
+    appearance: none;
+    /* Remove default appearance */
+
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    letter-spacing: 0;
+    text-align: left;
+
+}
+
+
+.MuiDayCalendar-header {
+    justify-content: space-around !important;
+}
+
+.MuiDayCalendar-weekContainer {
+    justify-content: space-around !important;
+}
+
+.date-picker-text{
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+
+
+.plain-button{
+    width:80;
+    cursor: "pointer";
+    border: 'none';
+    background-color: 'white';
+}

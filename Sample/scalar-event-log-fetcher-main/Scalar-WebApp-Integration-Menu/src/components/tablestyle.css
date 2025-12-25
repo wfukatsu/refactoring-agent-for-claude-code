@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+
+*{
+    font-family: "Nunito", sans-serif;
+}
+
+
+table {
+    border-collapse: collapse;
+  }
+  table td {
+    /* border: 1px solid #00000040; */
+    border-bottom: 1px solid #00000040;
+  }
+  table tr:first-child th {
+    border-top: 0;
+  }
+  table tr:last-child td {
+    border-bottom: 0;
+  }
+  table tr td:first-child,
+  table tr th:first-child {
+    border-left: 0;
+  }
+  table tr td:last-child,
+  table tr th:last-child {
+    border-right: 0;
+  }
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.no-border-table-heading{
+    border: none;
+}
+
+.table-container{
+    flex-direction: row;
+    border-radius: 20px;
+    background-color: white;
+}
+
+.table-heading{
+    background-color: #0061D5;
+    color: white;
+    height: 59px;
+    border-top-right-radius: 20px;
+    border-top-left-radius: 20px;
+    text-align: center;
+    border: 1px solid #00000040;
+}
+
+.table-elements{
+    justify-content: center;
+}
+
+.table-body{
+    background-color: #f9fbfe;
+}
+
+.table-row{
+    height: 59px;
+    text-align: center;
+    border-bottom: #00000040;
+}
+
+
+.pagination-container{
+    align-items: center;
+    justify-content: center;
+}

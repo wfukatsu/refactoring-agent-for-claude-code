@@ -1,0 +1,38 @@
+.bp-default-logo {
+    display: none;
+}
+.bp-btn-print {
+    display: none;
+}
+
+.bp-header {
+    display: flex;
+    justify-content: flex-end;
+    background-color: white;
+}
+
+.bp-header-btns button svg {
+    vertical-align: middle;
+    fill:  black;
+}
+
+/* .bp-default-logo {
+    display: none;
+} */
+
+/* .bp-header {
+    display: flex;
+    justify-content: flex-end;
+    background-color: #000d2d;
+} */
+
+/* .bp-header {
+    display: none;
+} */
+
+/* .bp-header-btns button svg {
+    vertical-align: middle;
+    fill: white;
+} */
+
+.bp-base-header {}

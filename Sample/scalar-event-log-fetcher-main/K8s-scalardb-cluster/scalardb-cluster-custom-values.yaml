@@ -1,0 +1,43 @@
+envoy:
+  enabled: true
+  service:
+    type: "LoadBalancer"
+
+scalardbCluster:
+  image:
+    repository: "ghcr.io/scalar-labs/scalardb-cluster-node-byol-premium"
+  scalardbClusterNodeProperties: |
+
+    scalar.db.cluster.node.licensing.license_key={"organization_name":"Scalar Inc / Kanzen Demo","expiration_date_time":null,"product_name":"ScalarDB Cluster","product_version":3,"license_type":"enterprise.premium","signature":"MEYCIQCdHYuqyuEGZOql5eIFsmIiE4p7z/gMlWItTutOEz/t8AIhAJt4nV/b6lkZHJh0z4aU9lial3fkSTJXXfkw0SXyZb5q"}
+    scalar.db.cluster.node.licensing.license_check_cert_pem=-----BEGIN CERTIFICATE-----\nMIICKzCCAdKgAwIBAgIIBXxj3s8NU+owCgYIKoZIzj0EAwIwbDELMAkGA1UEBhMC\nSlAxDjAMBgNVBAgTBVRva3lvMREwDwYDVQQHEwhTaGluanVrdTEVMBMGA1UEChMM\nU2NhbGFyLCBJbmMuMSMwIQYDVQQDExplbnRlcnByaXNlLnNjYWxhci1sYWJzLmNv\nbTAeFw0yMzExMTYwNzExNTdaFw0yNDAyMTUxMzE2NTdaMGwxCzAJBgNVBAYTAkpQ\nMQ4wDAYDVQQIEwVUb2t5bzERMA8GA1UEBxMIU2hpbmp1a3UxFTATBgNVBAoTDFNj\nYWxhciwgSW5jLjEjMCEGA1UEAxMaZW50ZXJwcmlzZS5zY2FsYXItbGFicy5jb20w\nWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATJx5gvAr+GZAHcBpUvDFDsUlFo4GNw\npRfsntzwStIP8ac3dew7HT4KbGBWei0BvIthleaqpv0AEP7JT6eYAkNvo14wXDAO\nBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAwG\nA1UdEwEB/wQCMAAwHQYDVR0OBBYEFMIe+XuuZcnDX1c3TmUPlu3kNv/wMAoGCCqG\nSM49BAMCA0cAMEQCIGGlqKpgv+KW+Z1ZkjfMHjSGeUZKBLwfMtErVyc9aTdIAiAy\nvsZyZP6Or9o40x3l3pw/BT7wvy93Jm0T4vtVQH6Zuw==\n-----END CERTIFICATE-----
+
+
+    # ScalarDB Cluster configurations
+    scalar.db.cluster.membership.type=KUBERNETES
+    scalar.db.cluster.membership.kubernetes.endpoint.namespace_name=${env:SCALAR_DB_CLUSTER_MEMBERSHIP_KUBERNETES_ENDPOINT_NAMESPACE_NAME}
+    scalar.db.cluster.membership.kubernetes.endpoint.name=${env:SCALAR_DB_CLUSTER_MEMBERSHIP_KUBERNETES_ENDPOINT_NAME}
+
+    # ScalarDB Auth
+    scalar.db.cluster.auth.enabled=true
+
+    # Storage configurations
+    scalar.db.storage=cassandra
+    scalar.db.contact_points=<CASSANDRA_IP_ADDR>
+    scalar.db.username=cassandra
+    scalar.db.password=cassandra
+
+
+    # For ScalarDB Cluster GraphQL tutorial.
+    # scalar.db.graphql.enabled=true
+    # scalar.db.graphql.namespaces=scalar_box
+    # scalar.db.graphql.port=8080
+    # scalar.db.graphql.path=/graphql
+
+    # For ScalarDB Cluster SQL tutorial.
+    scalar.db.sql.enabled=true
+    scalar.db.cross_partition_scan.enabled=true
+    scalar.db.cross_partition_scan.filtering.enabled=true
+  # graphql:
+  #   enabled: true
+  #   service:
+  #     type: "LoadBalancer"
