@@ -1,0 +1,27 @@
+name,name_ja,definition,domain
+AuditSet,監査セット,監査対象としてグループ化されたファイル/フォルダの集合,Audit
+AuditGroup,監査グループ,監査人をグループ化したもの,Audit
+Collaborator,コラボレーター,監査セットにアクセス権を持つユーザー,Audit
+Reviewer,レビュアー,監査セットを閲覧・検証できる外部監査人,Audit
+AuditAdmin,監査管理者,システムの管理権限を持つユーザー,Audit
+GeneralUser,一般ユーザー,基本的な操作のみ可能なユーザー,Identity
+ExternalAuditor,外部監査人,組織外から監査を行うユーザー,Audit
+Item,アイテム,ファイルまたはフォルダの総称,File
+Asset,アセット,ScalarDLに登録されたファイルのレコード,Verification
+TamperingVerification,改ざん検証,ファイルが改ざんされていないか確認する処理,Verification
+FileCopy,ファイルコピー,同一SHA1ハッシュを持つファイル群,File
+FileVersion,ファイルバージョン,ファイルの履歴バージョン,File
+SHA1Hash,SHA1ハッシュ,ファイル内容の一意識別子,File
+EventLog,イベントログ,BOXで発生したユーザー操作の記録,Event
+EnterpriseEvent,エンタープライズイベント,BOX Enterprise全体のイベント,Event
+EventType,イベントタイプ,操作の種類（UPLOAD/DOWNLOAD等）,Event
+PositionTracker,位置トラッカー,イベント取得の継続位置を記録,Event
+OTP,ワンタイムパスワード,パスワードリセット用の一時パスワード,Identity
+RefreshToken,リフレッシュトークン,アクセストークン更新用トークン,Identity
+AccessToken,アクセストークン,API認証用トークン,Identity
+Organization,組織,BOX Enterpriseの組織単位,Identity
+BoxAdmin,Box管理者,BOX側の管理権限を持つユーザー,Identity
+AuditSetItem,監査セットアイテム,監査セットに登録されたファイル/フォルダ,Audit
+AuditSetCollaborator,監査セットコラボレーター,監査セットへのアクセス権を持つユーザー,Audit
+AuditorLog,監査ログ,外部監査人のアクセス履歴,Event
+ItemStatus,アイテムステータス,ファイルの監視・検証状態,File

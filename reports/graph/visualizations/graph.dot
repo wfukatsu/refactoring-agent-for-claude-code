@@ -1,0 +1,148 @@
+digraph KnowledgeGraph {
+    rankdir=LR;
+    node [shape=box, style=filled, fillcolor=lightblue];
+    edge [color=gray];
+
+    subgraph cluster_Identity {
+        label="Identity";
+        style=filled;
+        fillcolor=lightblue;
+        User [label="User"];
+        UserToken [label="UserToken"];
+        UserOtp [label="UserOtp"];
+        Organization [label="Organization"];
+        RoleUser [label="RoleUser"];
+        UserController [label="UserController"];
+        UserService [label="UserService"];
+        UserRepository [label="UserRepository"];
+        UserTokenRepository [label="UserTokenRepository"];
+        UserOptRepository [label="UserOptRepository"];
+        OrganizationRepository [label="OrganizationRepository"];
+        RoleUserRepository [label="RoleUserRepository"];
+    }
+
+    subgraph cluster_Audit {
+        label="Audit";
+        style=filled;
+        fillcolor=lightcoral;
+        AuditSet [label="AuditSet"];
+        AuditSetItem [label="AuditSetItem"];
+        AuditSetCollaborators [label="AuditSetCollaborators"];
+        AuditSetController [label="AuditSetController"];
+        AuditSetItemController [label="AuditSetItemController"];
+        AuditSetCollaboratorController [label="AuditSetCollaboratorController"];
+        AuditSetService [label="AuditSetService"];
+        AuditSetItemService [label="AuditSetItemService"];
+        AuditSetCollaboratorService [label="AuditSetCollaboratorService"];
+        AuditSetRepository [label="AuditSetRepository"];
+        AuditSetItemRepository [label="AuditSetItemRepository"];
+        AuditSetCollaboratorsRepository [label="AuditSetCollaboratorsRepository"];
+    }
+
+    subgraph cluster_AuditGroup {
+        label="AuditGroup";
+        style=filled;
+        fillcolor=lightblue;
+        AuditGroup [label="AuditGroup"];
+        UserAuditGroup [label="UserAuditGroup"];
+        AuditGrpAuditSetMapping [label="AuditGrpAuditSetMapping"];
+        AuditGroupController [label="AuditGroupController"];
+        AuditGroupService [label="AuditGroupService"];
+        AuditGroupRepository [label="AuditGroupRepository"];
+        UserAuditGroupRepository [label="UserAuditGroupRepository"];
+        AuditGrpAuditSetMappingRepository [label="AuditGrpAuditSetMappingRepository"];
+    }
+
+    subgraph cluster_File {
+        label="File";
+        style=filled;
+        fillcolor=lightblue;
+        Item [label="Item"];
+        ItemStatus [label="ItemStatus"];
+        ItemEvents [label="ItemEvents"];
+        ItemsBySha1 [label="ItemsBySha1"];
+        FileController [label="FileController"];
+        FolderController [label="FolderController"];
+        ItemController [label="ItemController"];
+        FileService [label="FileService"];
+        FolderService [label="FolderService"];
+        CommonService [label="CommonService"];
+        ItemRepository [label="ItemRepository"];
+        ItemStatusRepository [label="ItemStatusRepository"];
+        ItemEventsRepository [label="ItemEventsRepository"];
+        ItemsBySha1Repository [label="ItemsBySha1Repository"];
+    }
+
+    subgraph cluster_Event {
+        label="Event";
+        style=filled;
+        fillcolor=lightcoral;
+        Events [label="Events"];
+        EnterpriseEventLogs [label="EnterpriseEventLogs"];
+        PositionTracker [label="PositionTracker"];
+        AuditorLogs [label="AuditorLogs"];
+        SystemEventDates [label="SystemEventDates"];
+        EventLogController [label="EventLogController"];
+        EventLogService [label="EventLogService"];
+        EventsRepository [label="EventsRepository"];
+        EnterpriseEventLogsRepository [label="EnterpriseEventLogsRepository"];
+        PositionTrackerRepository [label="PositionTrackerRepository"];
+        AuditorLogsRepository [label="AuditorLogsRepository"];
+        SystemEventDatesRepository [label="SystemEventDatesRepository"];
+    }
+
+    subgraph cluster_Verification {
+        label="Verification";
+        style=filled;
+        fillcolor=lightcoral;
+        AssetService [label="AssetService"];
+        ScalardlRepository [label="ScalardlRepository"];
+    }
+
+    subgraph cluster_BOXIntegration {
+        label="BOXIntegration";
+        style=filled;
+        fillcolor=lightgreen;
+    }
+
+    // References
+    AuditSet -> User [label="owned_by"];
+    AuditSetItem -> AuditSet [label="belongs_to"];
+    AuditSetItem -> Item [label="references"];
+    AuditSetCollaborators -> AuditSet [label="belongs_to"];
+    AuditSetCollaborators -> User [label="references"];
+    AuditGroup -> User [label="owned_by"];
+    UserAuditGroup -> User [label="references"];
+    UserAuditGroup -> AuditGroup [label="belongs_to"];
+    AuditGrpAuditSetMapping -> AuditGroup [label="references"];
+    AuditGrpAuditSetMapping -> AuditSet [label="references"];
+    Item -> ItemStatus [label="has"];
+    Item -> ItemEvents [label="has"];
+    Item -> ItemsBySha1 [label="grouped_by"];
+    Events -> User [label="triggered_by"];
+    Events -> Item [label="affects"];
+    AuditorLogs -> User [label="logged_for"];
+    UserController -> UserService [label="uses"];
+    AuditSetController -> AuditSetService [label="uses"];
+    AuditSetItemController -> AuditSetItemService [label="uses"];
+    AuditSetCollaboratorController -> AuditSetCollaboratorService [label="uses"];
+    AuditGroupController -> AuditGroupService [label="uses"];
+    FileController -> FileService [label="uses"];
+    FolderController -> FolderService [label="uses"];
+    EventLogController -> EventLogService [label="uses"];
+    UserService -> UserRepository [label="uses"];
+    UserService -> UserTokenRepository [label="uses"];
+    UserService -> UserOptRepository [label="uses"];
+    UserService -> OrganizationRepository [label="uses"];
+    AuditSetService -> AuditSetRepository [label="uses"];
+    AuditSetItemService -> AuditSetItemRepository [label="uses"];
+    AuditSetCollaboratorService -> AuditSetCollaboratorsRepository [label="uses"];
+    AuditGroupService -> AuditGroupRepository [label="uses"];
+    AuditGroupService -> UserAuditGroupRepository [label="uses"];
+    FileService -> ItemRepository [label="uses"];
+    FileService -> ItemStatusRepository [label="uses"];
+    EventLogService -> EventsRepository [label="uses"];
+    EventLogService -> EnterpriseEventLogsRepository [label="uses"];
+    EventLogService -> PositionTrackerRepository [label="uses"];
+    AssetService -> ScalardlRepository [label="uses"];
+}
