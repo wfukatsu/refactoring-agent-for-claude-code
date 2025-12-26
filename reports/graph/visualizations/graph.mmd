@@ -1,0 +1,116 @@
+graph LR
+    subgraph Identity["Identity (Supporting)"]
+        User[User]
+        UserToken[UserToken]
+        UserOtp[UserOtp]
+        Organization[Organization]
+        RoleUser[RoleUser]
+        UserController[UserController]
+        UserService[UserService]
+        UserRepository[UserRepository]
+        UserTokenRepository[UserTokenRepository]
+        UserOptRepository[UserOptRepository]
+        OrganizationRepository[OrganizationRepository]
+        RoleUserRepository[RoleUserRepository]
+    end
+    subgraph Audit["Audit (Core)"]
+        AuditSet[AuditSet]
+        AuditSetItem[AuditSetItem]
+        AuditSetCollaborators[AuditSetCollaborators]
+        AuditSetController[AuditSetController]
+        AuditSetItemController[AuditSetItemController]
+        AuditSetCollaboratorController[AuditSetCollaboratorController]
+        AuditSetService[AuditSetService]
+        AuditSetItemService[AuditSetItemService]
+        AuditSetCollaboratorService[AuditSetCollaboratorService]
+        AuditSetRepository[AuditSetRepository]
+        AuditSetItemRepository[AuditSetItemRepository]
+        AuditSetCollaboratorsRepository[AuditSetCollaboratorsRepository]
+    end
+    subgraph AuditGroup["AuditGroup (Supporting)"]
+        AuditGroup[AuditGroup]
+        UserAuditGroup[UserAuditGroup]
+        AuditGrpAuditSetMapping[AuditGrpAuditSetMapping]
+        AuditGroupController[AuditGroupController]
+        AuditGroupService[AuditGroupService]
+        AuditGroupRepository[AuditGroupRepository]
+        UserAuditGroupRepository[UserAuditGroupRepository]
+        AuditGrpAuditSetMappingRepository[AuditGrpAuditSetMappingRepository]
+    end
+    subgraph File["File (Supporting)"]
+        Item[Item]
+        ItemStatus[ItemStatus]
+        ItemEvents[ItemEvents]
+        ItemsBySha1[ItemsBySha1]
+        FileController[FileController]
+        FolderController[FolderController]
+        ItemController[ItemController]
+        FileService[FileService]
+        FolderService[FolderService]
+        CommonService[CommonService]
+        ItemRepository[ItemRepository]
+        ItemStatusRepository[ItemStatusRepository]
+        ItemEventsRepository[ItemEventsRepository]
+        ItemsBySha1Repository[ItemsBySha1Repository]
+    end
+    subgraph Event["Event (Core)"]
+        Events[Events]
+        EnterpriseEventLogs[EnterpriseEventLogs]
+        PositionTracker[PositionTracker]
+        AuditorLogs[AuditorLogs]
+        SystemEventDates[SystemEventDates]
+        EventLogController[EventLogController]
+        EventLogService[EventLogService]
+        EventsRepository[EventsRepository]
+        EnterpriseEventLogsRepository[EnterpriseEventLogsRepository]
+        PositionTrackerRepository[PositionTrackerRepository]
+        AuditorLogsRepository[AuditorLogsRepository]
+        SystemEventDatesRepository[SystemEventDatesRepository]
+    end
+    subgraph Verification["Verification (Core)"]
+        AssetService[AssetService]
+        ScalardlRepository[ScalardlRepository]
+    end
+    subgraph BOXIntegration["BOXIntegration (Integration)"]
+    end
+
+    %% References
+    AuditSet -->|owned_by| User
+    AuditSetItem -->|belongs_to| AuditSet
+    AuditSetItem -->|references| Item
+    AuditSetCollaborators -->|belongs_to| AuditSet
+    AuditSetCollaborators -->|references| User
+    AuditGroup -->|owned_by| User
+    UserAuditGroup -->|references| User
+    UserAuditGroup -->|belongs_to| AuditGroup
+    AuditGrpAuditSetMapping -->|references| AuditGroup
+    AuditGrpAuditSetMapping -->|references| AuditSet
+    Item -->|has| ItemStatus
+    Item -->|has| ItemEvents
+    Item -->|grouped_by| ItemsBySha1
+    Events -->|triggered_by| User
+    Events -->|affects| Item
+    AuditorLogs -->|logged_for| User
+    UserController -->|uses| UserService
+    AuditSetController -->|uses| AuditSetService
+    AuditSetItemController -->|uses| AuditSetItemService
+    AuditSetCollaboratorController -->|uses| AuditSetCollaboratorService
+    AuditGroupController -->|uses| AuditGroupService
+    FileController -->|uses| FileService
+    FolderController -->|uses| FolderService
+    EventLogController -->|uses| EventLogService
+    UserService -->|uses| UserRepository
+    UserService -->|uses| UserTokenRepository
+    UserService -->|uses| UserOptRepository
+    UserService -->|uses| OrganizationRepository
+    AuditSetService -->|uses| AuditSetRepository
+    AuditSetItemService -->|uses| AuditSetItemRepository
+    AuditSetCollaboratorService -->|uses| AuditSetCollaboratorsRepository
+    AuditGroupService -->|uses| AuditGroupRepository
+    AuditGroupService -->|uses| UserAuditGroupRepository
+    FileService -->|uses| ItemRepository
+    FileService -->|uses| ItemStatusRepository
+    EventLogService -->|uses| EventsRepository
+    EventLogService -->|uses| EnterpriseEventLogsRepository
+    EventLogService -->|uses| PositionTrackerRepository
+    AssetService -->|uses| ScalardlRepository

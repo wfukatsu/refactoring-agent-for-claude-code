@@ -1,0 +1,103 @@
+{
+    "project": {
+        "name": "Scalar Auditor for BOX",
+        "version": "1.0.0",
+        "created_at": "2025-12-26",
+        "updated_at": "2025-12-26"
+    },
+    "source": {
+        "path": "scalar-event-log-fetcher-main",
+        "type": "monorepo",
+        "languages": ["Java", "JavaScript", "JSX"],
+        "frameworks": ["Spring Boot 3.2.1", "React 18", "Vite"]
+    },
+    "analysis": {
+        "status": "completed",
+        "modules_count": 5,
+        "domains_count": 6,
+        "controllers_count": 9,
+        "services_count": 12,
+        "repositories_count": 22,
+        "entities_count": 20
+    },
+    "agents": {
+        "system_analyzer": { "status": "completed" },
+        "mmi_evaluator": { "status": "completed" },
+        "domain_mapper": { "status": "completed" },
+        "microservice_architect": { "status": "completed" },
+        "domain_storyteller": { "status": "completed" }
+    },
+    "mmi": {
+        "overall_score": 48.6,
+        "maturity_level": "低中成熟",
+        "cohesion_avg": 2.2,
+        "coupling_avg": 2.0,
+        "independence_avg": 2.5,
+        "reusability_avg": 2.7,
+        "modules_evaluated": 10
+    },
+    "outputs": {
+        "00_summary": [
+            "project_metadata.json",
+            "executive-summary.md"
+        ],
+        "01_analysis": [
+            "system-overview.md",
+            "ubiquitous-language.md",
+            "actors-roles-permissions.md",
+            "domain-code-mapping.md"
+        ],
+        "02_evaluation": [
+            "mmi-overview.md",
+            "mmi-by-module.md",
+            "mmi-improvement-plan.md"
+        ],
+        "03_design": [
+            "domain-analysis.md",
+            "context-map.md",
+            "system-mapping.md",
+            "scalardb_architecture.md",
+            "scalardb_schema.md",
+            "scalardb_transaction.md",
+            "scalardb_migration.md",
+            "target_architecture.md",
+            "transformation_plan.md",
+            "operations_plan.md"
+        ],
+        "04_stories": [
+            "domain-stories.md"
+        ],
+        "graph": [
+            "schema.md",
+            "statistics.md"
+        ]
+    },
+    "scalardb": {
+        "deploy_mode": "ScalarDB Cluster",
+        "transaction_manager": "Consensus Commit",
+        "isolation_level": "SERIALIZABLE",
+        "storage_strategy": "Multi-storage",
+        "namespaces": {
+            "identity": "PostgreSQL",
+            "audit": "PostgreSQL",
+            "file": "PostgreSQL",
+            "event": "Cassandra",
+            "coordinator": "PostgreSQL"
+        },
+        "tables_count": 20,
+        "migration_phases": 4
+    },
+    "domains": {
+        "bounded_contexts": 6,
+        "core_domains": ["Audit Management", "Event Tracking", "Integrity Verification"],
+        "supporting_domains": ["Identity & Access", "File Management"],
+        "integration_domains": ["BOX Integration"],
+        "context_patterns": {
+            "partnership": 1,
+            "customer_supplier": 3,
+            "open_host_service": 1,
+            "anti_corruption_layer": 1,
+            "conformist": 1
+        }
+    }
+}

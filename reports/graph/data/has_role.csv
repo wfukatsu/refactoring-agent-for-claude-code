@@ -1,0 +1,9 @@
+actor,role
+AuditAdmin,AUDIT_ADMIN
+GeneralUser,GENERAL_USER
+ExternalAuditor,EXTERNAL_AUDITOR
+AuditAdmin,OWNER
+GeneralUser,OWNER
+GeneralUser,CO_OWNER
+GeneralUser,MEMBER
+ExternalAuditor,REVIEWER

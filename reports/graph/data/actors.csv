@@ -1,0 +1,7 @@
+name,type,description
+AuditAdmin,internal,システム全体の管理者
+GeneralUser,internal,BOX組織内の通常ユーザー
+ExternalAuditor,internal,組織外の監査担当者
+BOXPlatform,external,クラウドストレージサービス
+ScalarDBCluster,external,分散トランザクションDB
+ScalarDL,external,台帳サービス

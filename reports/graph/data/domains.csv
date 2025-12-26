@@ -1,0 +1,8 @@
+name,type,description
+Identity,Supporting,ユーザー認証・認可、組織管理
+Audit,Core,監査対象のグループ化と管理
+AuditGroup,Supporting,監査人のグループ化
+File,Supporting,ファイル・フォルダの管理
+Event,Core,イベントログの収集・表示
+Verification,Core,ScalarDLによる改ざん検証
+BOXIntegration,Integration,BOX Platform連携

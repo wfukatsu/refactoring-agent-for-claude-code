@@ -1,0 +1,8 @@
+name,level,permissions
+AUDIT_ADMIN,system,ユーザー管理|全監査セットアクセス|システム設定
+GENERAL_USER,system,監査セット作成|自分の監査セット管理|イベントログ閲覧
+EXTERNAL_AUDITOR,system,招待された監査セットの閲覧|改ざん検証
+OWNER,collaborator,全権限（削除・オーナー変更含む）
+CO_OWNER,collaborator,編集|メンバー管理
+MEMBER,collaborator,閲覧|アイテム追加
+REVIEWER,collaborator,閲覧のみ

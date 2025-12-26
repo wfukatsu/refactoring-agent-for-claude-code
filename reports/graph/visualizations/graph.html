@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Knowledge Graph Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+        }
+        #graph {
+            width: 100vw;
+            height: 100vh;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node text {
+            font-size: 10px;
+            fill: white;
+        }
+        .link {
+            stroke: #666;
+            stroke-opacity: 0.6;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        #search {
+            width: 200px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        #stats {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <input type="text" id="search" placeholder="Search nodes...">
+        <div id="stats"></div>
+    </div>
+    <div id="graph"></div>
+    <script>
+        const data = {"nodes": [{"id": "domain_Identity", "name": "Identity", "type": "Domain", "group": "Supporting"}, {"id": "domain_Audit", "name": "Audit", "type": "Domain", "group": "Core"}, {"id": "domain_AuditGroup", "name": "AuditGroup", "type": "Domain", "group": "Supporting"}, {"id": "domain_File", "name": "File", "type": "Domain", "group": "Supporting"}, {"id": "domain_Event", "name": "Event", "type": "Domain", "group": "Core"}, {"id": "domain_Verification", "name": "Verification", "type": "Domain", "group": "Core"}, {"id": "domain_BOXIntegration", "name": "BOXIntegration", "type": "Domain", "group": "Integration"}, {"id": "entity_User", "name": "User", "type": "Entity", "group": "class"}, {"id": "entity_UserToken", "name": "UserToken", "type": "Entity", "group": "class"}, {"id": "entity_UserOtp", "name": "UserOtp", "type": "Entity", "group": "class"}, {"id": "entity_Organization", "name": "Organization", "type": "Entity", "group": "class"}, {"id": "entity_RoleUser", "name": "RoleUser", "type": "Entity", "group": "class"}, {"id": "entity_AuditSet", "name": "AuditSet", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetItem", "name": "AuditSetItem", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetCollaborators", "name": "AuditSetCollaborators", "type": "Entity", "group": "class"}, {"id": "entity_AuditGroup", "name": "AuditGroup", "type": "Entity", "group": "class"}, {"id": "entity_UserAuditGroup", "name": "UserAuditGroup", "type": "Entity", "group": "class"}, {"id": "entity_AuditGrpAuditSetMapping", "name": "AuditGrpAuditSetMapping", "type": "Entity", "group": "class"}, {"id": "entity_Item", "name": "Item", "type": "Entity", "group": "class"}, {"id": "entity_ItemStatus", "name": "ItemStatus", "type": "Entity", "group": "class"}, {"id": "entity_ItemEvents", "name": "ItemEvents", "type": "Entity", "group": "class"}, {"id": "entity_ItemsBySha1", "name": "ItemsBySha1", "type": "Entity", "group": "class"}, {"id": "entity_Events", "name": "Events", "type": "Entity", "group": "class"}, {"id": "entity_EnterpriseEventLogs", "name": "EnterpriseEventLogs", "type": "Entity", "group": "class"}, {"id": "entity_PositionTracker", "name": "PositionTracker", "type": "Entity", "group": "class"}, {"id": "entity_AuditorLogs", "name": "AuditorLogs", "type": "Entity", "group": "class"}, {"id": "entity_SystemEventDates", "name": "SystemEventDates", "type": "Entity", "group": "class"}, {"id": "entity_UserController", "name": "UserController", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetController", "name": "AuditSetController", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetItemController", "name": "AuditSetItemController", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetCollaboratorController", "name": "AuditSetCollaboratorController", "type": "Entity", "group": "class"}, {"id": "entity_AuditGroupController", "name": "AuditGroupController", "type": "Entity", "group": "class"}, {"id": "entity_FileController", "name": "FileController", "type": "Entity", "group": "class"}, {"id": "entity_FolderController", "name": "FolderController", "type": "Entity", "group": "class"}, {"id": "entity_ItemController", "name": "ItemController", "type": "Entity", "group": "class"}, {"id": "entity_EventLogController", "name": "EventLogController", "type": "Entity", "group": "class"}, {"id": "entity_UserService", "name": "UserService", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetService", "name": "AuditSetService", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetItemService", "name": "AuditSetItemService", "type": "Entity", "group": "class"}, {"id": "entity_AuditSetCollaboratorService", "name": "AuditSetCollaboratorService", "type": "Entity", "group": "class"}, {"id": "entity_AuditGroupService", "name": "AuditGroupService", "type": "Entity", "group": "class"}, {"id": "entity_FileService", "name": "FileService", "type": "Entity", "group": "class"}, {"id": "entity_FolderService", "name": "FolderService", "type": "Entity", "group": "class"}, {"id": "entity_CommonService", "name": "CommonService", "type": "Entity", "group": "class"}, {"id": "entity_AssetService", "name": "AssetService", "type": "Entity", "group": "class"}, {"id": "entity_EventLogService", "name": "EventLogService", "type": "Entity", "group": "class"}, {"id": "entity_UserRepository", "name": "UserRepository", "type": "Entity", "group": "interface"}, {"id": "entity_UserTokenRepository", "name": "UserTokenRepository", "type": "Entity", "group": "interface"}, {"id": "entity_UserOptRepository", "name": "UserOptRepository", "type": "Entity", "group": "interface"}, {"id": "entity_OrganizationRepository", "name": "OrganizationRepository", "type": "Entity", "group": "interface"}, {"id": "entity_RoleUserRepository", "name": "RoleUserRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditSetRepository", "name": "AuditSetRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditSetItemRepository", "name": "AuditSetItemRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditSetCollaboratorsRepository", "name": "AuditSetCollaboratorsRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditGroupRepository", "name": "AuditGroupRepository", "type": "Entity", "group": "interface"}, {"id": "entity_UserAuditGroupRepository", "name": "UserAuditGroupRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditGrpAuditSetMappingRepository", "name": "AuditGrpAuditSetMappingRepository", "type": "Entity", "group": "interface"}, {"id": "entity_ItemRepository", "name": "ItemRepository", "type": "Entity", "group": "interface"}, {"id": "entity_ItemStatusRepository", "name": "ItemStatusRepository", "type": "Entity", "group": "interface"}, {"id": "entity_ItemEventsRepository", "name": "ItemEventsRepository", "type": "Entity", "group": "interface"}, {"id": "entity_ItemsBySha1Repository", "name": "ItemsBySha1Repository", "type": "Entity", "group": "interface"}, {"id": "entity_EventsRepository", "name": "EventsRepository", "type": "Entity", "group": "interface"}, {"id": "entity_EnterpriseEventLogsRepository", "name": "EnterpriseEventLogsRepository", "type": "Entity", "group": "interface"}, {"id": "entity_PositionTrackerRepository", "name": "PositionTrackerRepository", "type": "Entity", "group": "interface"}, {"id": "entity_AuditorLogsRepository", "name": "AuditorLogsRepository", "type": "Entity", "group": "interface"}, {"id": "entity_SystemEventDatesRepository", "name": "SystemEventDatesRepository", "type": "Entity", "group": "interface"}, {"id": "entity_ScalardlRepository", "name": "ScalardlRepository", "type": "Entity", "group": "interface"}, {"id": "term_AuditSet", "name": "AuditSet (\u76e3\u67fb\u30bb\u30c3\u30c8)", "type": "Term", "group": "Audit"}, {"id": "term_AuditGroup", "name": "AuditGroup (\u76e3\u67fb\u30b0\u30eb\u30fc\u30d7)", "type": "Term", "group": "Audit"}, {"id": "term_Collaborator", "name": "Collaborator (\u30b3\u30e9\u30dc\u30ec\u30fc\u30bf\u30fc)", "type": "Term", "group": "Audit"}, {"id": "term_Reviewer", "name": "Reviewer (\u30ec\u30d3\u30e5\u30a2\u30fc)", "type": "Term", "group": "Audit"}, {"id": "term_AuditAdmin", "name": "AuditAdmin (\u76e3\u67fb\u7ba1\u7406\u8005)", "type": "Term", "group": "Audit"}, {"id": "term_GeneralUser", "name": "GeneralUser (\u4e00\u822c\u30e6\u30fc\u30b6\u30fc)", "type": "Term", "group": "Identity"}, {"id": "term_ExternalAuditor", "name": "ExternalAuditor (\u5916\u90e8\u76e3\u67fb\u4eba)", "type": "Term", "group": "Audit"}, {"id": "term_Item", "name": "Item (\u30a2\u30a4\u30c6\u30e0)", "type": "Term", "group": "File"}, {"id": "term_Asset", "name": "Asset (\u30a2\u30bb\u30c3\u30c8)", "type": "Term", "group": "Verification"}, {"id": "term_TamperingVerification", "name": "TamperingVerification (\u6539\u3056\u3093\u691c\u8a3c)", "type": "Term", "group": "Verification"}, {"id": "term_FileCopy", "name": "FileCopy (\u30d5\u30a1\u30a4\u30eb\u30b3\u30d4\u30fc)", "type": "Term", "group": "File"}, {"id": "term_FileVersion", "name": "FileVersion (\u30d5\u30a1\u30a4\u30eb\u30d0\u30fc\u30b8\u30e7\u30f3)", "type": "Term", "group": "File"}, {"id": "term_SHA1Hash", "name": "SHA1Hash (SHA1\u30cf\u30c3\u30b7\u30e5)", "type": "Term", "group": "File"}, {"id": "term_EventLog", "name": "EventLog (\u30a4\u30d9\u30f3\u30c8\u30ed\u30b0)", "type": "Term", "group": "Event"}, {"id": "term_EnterpriseEvent", "name": "EnterpriseEvent (\u30a8\u30f3\u30bf\u30fc\u30d7\u30e9\u30a4\u30ba\u30a4\u30d9\u30f3\u30c8)", "type": "Term", "group": "Event"}, {"id": "term_EventType", "name": "EventType (\u30a4\u30d9\u30f3\u30c8\u30bf\u30a4\u30d7)", "type": "Term", "group": "Event"}, {"id": "term_PositionTracker", "name": "PositionTracker (\u4f4d\u7f6e\u30c8\u30e9\u30c3\u30ab\u30fc)", "type": "Term", "group": "Event"}, {"id": "term_OTP", "name": "OTP (\u30ef\u30f3\u30bf\u30a4\u30e0\u30d1\u30b9\u30ef\u30fc\u30c9)", "type": "Term", "group": "Identity"}, {"id": "term_RefreshToken", "name": "RefreshToken (\u30ea\u30d5\u30ec\u30c3\u30b7\u30e5\u30c8\u30fc\u30af\u30f3)", "type": "Term", "group": "Identity"}, {"id": "term_AccessToken", "name": "AccessToken (\u30a2\u30af\u30bb\u30b9\u30c8\u30fc\u30af\u30f3)", "type": "Term", "group": "Identity"}, {"id": "term_Organization", "name": "Organization (\u7d44\u7e54)", "type": "Term", "group": "Identity"}, {"id": "term_BoxAdmin", "name": "BoxAdmin (Box\u7ba1\u7406\u8005)", "type": "Term", "group": "Identity"}, {"id": "term_AuditSetItem", "name": "AuditSetItem (\u76e3\u67fb\u30bb\u30c3\u30c8\u30a2\u30a4\u30c6\u30e0)", "type": "Term", "group": "Audit"}, {"id": "term_AuditSetCollaborator", "name": "AuditSetCollaborator (\u76e3\u67fb\u30bb\u30c3\u30c8\u30b3\u30e9\u30dc\u30ec\u30fc\u30bf\u30fc)", "type": "Term", "group": "Audit"}, {"id": "term_AuditorLog", "name": "AuditorLog (\u76e3\u67fb\u30ed\u30b0)", "type": "Term", "group": "Event"}, {"id": "term_ItemStatus", "name": "ItemStatus (\u30a2\u30a4\u30c6\u30e0\u30b9\u30c6\u30fc\u30bf\u30b9)", "type": "Term", "group": "File"}], "links": [{"source": "entity_User", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserToken", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserOtp", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "term_Organization", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_RoleUser", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserController", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserService", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserRepository", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserTokenRepository", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_UserOptRepository", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_OrganizationRepository", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "entity_RoleUserRepository", "target": "domain_Identity", "type": "BELONGS_TO"}, {"source": "term_AuditSet", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "term_AuditSetItem", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetCollaborators", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetController", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetItemController", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetCollaboratorController", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetService", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetItemService", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetCollaboratorService", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetRepository", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetItemRepository", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "entity_AuditSetCollaboratorsRepository", "target": "domain_Audit", "type": "BELONGS_TO"}, {"source": "term_AuditGroup", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_UserAuditGroup", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_AuditGrpAuditSetMapping", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_AuditGroupController", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_AuditGroupService", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_AuditGroupRepository", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_UserAuditGroupRepository", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "entity_AuditGrpAuditSetMappingRepository", "target": "term_AuditGroup", "type": "BELONGS_TO"}, {"source": "term_Item", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "term_ItemStatus", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemEvents", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemsBySha1", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_FileController", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_FolderController", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemController", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_FileService", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_FolderService", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_CommonService", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemRepository", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemStatusRepository", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemEventsRepository", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_ItemsBySha1Repository", "target": "domain_File", "type": "BELONGS_TO"}, {"source": "entity_Events", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_EnterpriseEventLogs", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "term_PositionTracker", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_AuditorLogs", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_SystemEventDates", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_EventLogController", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_EventLogService", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_EventsRepository", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_EnterpriseEventLogsRepository", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_PositionTrackerRepository", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_AuditorLogsRepository", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_SystemEventDatesRepository", "target": "domain_Event", "type": "BELONGS_TO"}, {"source": "entity_AssetService", "target": "domain_Verification", "type": "BELONGS_TO"}, {"source": "entity_ScalardlRepository", "target": "domain_Verification", "type": "BELONGS_TO"}, {"source": "term_AuditSet", "target": "entity_User", "type": "owned_by"}, {"source": "term_AuditSetItem", "target": "term_AuditSet", "type": "belongs_to"}, {"source": "term_AuditSetItem", "target": "term_Item", "type": "references"}, {"source": "entity_AuditSetCollaborators", "target": "term_AuditSet", "type": "belongs_to"}, {"source": "entity_AuditSetCollaborators", "target": "entity_User", "type": "references"}, {"source": "term_AuditGroup", "target": "entity_User", "type": "owned_by"}, {"source": "entity_UserAuditGroup", "target": "entity_User", "type": "references"}, {"source": "entity_UserAuditGroup", "target": "term_AuditGroup", "type": "belongs_to"}, {"source": "entity_AuditGrpAuditSetMapping", "target": "term_AuditGroup", "type": "references"}, {"source": "entity_AuditGrpAuditSetMapping", "target": "term_AuditSet", "type": "references"}, {"source": "term_Item", "target": "term_ItemStatus", "type": "has"}, {"source": "term_Item", "target": "entity_ItemEvents", "type": "has"}, {"source": "term_Item", "target": "entity_ItemsBySha1", "type": "grouped_by"}, {"source": "entity_Events", "target": "entity_User", "type": "triggered_by"}, {"source": "entity_Events", "target": "term_Item", "type": "affects"}, {"source": "entity_AuditorLogs", "target": "entity_User", "type": "logged_for"}, {"source": "entity_UserController", "target": "entity_UserService", "type": "uses"}, {"source": "entity_AuditSetController", "target": "entity_AuditSetService", "type": "uses"}, {"source": "entity_AuditSetItemController", "target": "entity_AuditSetItemService", "type": "uses"}, {"source": "entity_AuditSetCollaboratorController", "target": "entity_AuditSetCollaboratorService", "type": "uses"}, {"source": "entity_AuditGroupController", "target": "entity_AuditGroupService", "type": "uses"}, {"source": "entity_FileController", "target": "entity_FileService", "type": "uses"}, {"source": "entity_FolderController", "target": "entity_FolderService", "type": "uses"}, {"source": "entity_EventLogController", "target": "entity_EventLogService", "type": "uses"}, {"source": "entity_UserService", "target": "entity_UserRepository", "type": "uses"}, {"source": "entity_UserService", "target": "entity_UserTokenRepository", "type": "uses"}, {"source": "entity_UserService", "target": "entity_UserOptRepository", "type": "uses"}, {"source": "entity_UserService", "target": "entity_OrganizationRepository", "type": "uses"}, {"source": "entity_AuditSetService", "target": "entity_AuditSetRepository", "type": "uses"}, {"source": "entity_AuditSetItemService", "target": "entity_AuditSetItemRepository", "type": "uses"}, {"source": "entity_AuditSetCollaboratorService", "target": "entity_AuditSetCollaboratorsRepository", "type": "uses"}, {"source": "entity_AuditGroupService", "target": "entity_AuditGroupRepository", "type": "uses"}, {"source": "entity_AuditGroupService", "target": "entity_UserAuditGroupRepository", "type": "uses"}, {"source": "entity_FileService", "target": "entity_ItemRepository", "type": "uses"}, {"source": "entity_FileService", "target": "entity_ItemStatusRepository", "type": "uses"}, {"source": "entity_EventLogService", "target": "entity_EventsRepository", "type": "uses"}, {"source": "entity_EventLogService", "target": "entity_EnterpriseEventLogsRepository", "type": "uses"}, {"source": "entity_EventLogService", "target": "entity_PositionTrackerRepository", "type": "uses"}, {"source": "entity_AssetService", "target": "entity_ScalardlRepository", "type": "uses"}]};
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select("#graph")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g");
+
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on("zoom", (event) => g.attr("transform", event.transform));
+        svg.call(zoom);
+
+        // Color scale
+        const color = d3.scaleOrdinal()
+            .domain(["Domain", "Entity", "Term"])
+            .range(["#e74c3c", "#3498db", "#2ecc71"]);
+
+        // Force simulation
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(30));
+
+        // Links
+        const link = g.append("g")
+            .selectAll("line")
+            .data(data.links)
+            .join("line")
+            .attr("class", "link")
+            .attr("stroke-width", 1);
+
+        // Nodes
+        const node = g.append("g")
+            .selectAll("g")
+            .data(data.nodes)
+            .join("g")
+            .attr("class", "node")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("circle")
+            .attr("r", d => d.type === "Domain" ? 15 : 10)
+            .attr("fill", d => color(d.type));
+
+        node.append("text")
+            .attr("dx", 12)
+            .attr("dy", 4)
+            .text(d => d.name.substring(0, 20));
+
+        // Tooltip
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        node.on("mouseover", (event, d) => {
+            tooltip.transition().duration(200).style("opacity", 1);
+            tooltip.html(`<strong>${d.name}</strong><br/>Type: ${d.type}<br/>Group: ${d.group}`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 10) + "px");
+        }).on("mouseout", () => {
+            tooltip.transition().duration(500).style("opacity", 0);
+        });
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+
+        // Search
+        d3.select("#search").on("input", function() {
+            const query = this.value.toLowerCase();
+            node.style("opacity", d =>
+                d.name.toLowerCase().includes(query) ? 1 : 0.2);
+            link.style("opacity", 0.2);
+        });
+
+        // Stats
+        d3.select("#stats").html(
+            `Nodes: ${data.nodes.length} | Links: ${data.links.length}`
+        );
+    </script>
+</body>
+</html>
