@@ -1,441 +1,276 @@
-# MMI改善計画 (MMI Improvement Plan)
+# MMI改善計画
 
-## 1. 改善目標
+## 改善目標
 
-### 1.1 定量目標
+現在のMMIスコア **52.3** を **70.0以上** に向上させ、
+マイクロサービス化に適した状態を達成する。
 
-| 指標 | 現状 | Phase 1 | Phase 2 | Phase 3 | 最終目標 |
-|------|------|---------|---------|---------|---------|
-| 総合MMI | 48.6 | 55 | 65 | 75 | 80+ |
-| Cohesion平均 | 2.2 | 2.8 | 3.5 | 4.0 | 4.0+ |
-| Coupling平均 | 2.0 | 2.5 | 3.0 | 3.5 | 4.0+ |
-| Independence平均 | 2.5 | 3.0 | 3.5 | 4.0 | 4.0+ |
-| Reusability平均 | 2.7 | 3.0 | 3.5 | 4.0 | 4.0+ |
+## 改善フェーズ
 
-### 1.2 定性目標
+### Phase 1: God Class分解（優先度: 最高）
 
-1. **Phase 1**: 最大のボトルネックである`UserService`の分割完了
-2. **Phase 2**: サービス間の循環依存解消、BOX連携の抽象化
-3. **Phase 3**: ドメイン駆動設計の適用、マイクロサービス境界の明確化
-4. **最終**: マイクロサービスとして独立デプロイ可能な状態
+**対象**: UserService (MMI: 34.0 → 目標: 65.0)
+**期間目安**: 中規模
+
+#### 分割計画
+
+```mermaid
+graph TD
+    subgraph "現状"
+        US[UserService<br/>1118行, MMI:34]
+    end
+    
+    subgraph "分割後"
+        AS[AuthService<br/>~200行]
+        UMS[UserManagementService<br/>~250行]
+        RS[RoleService<br/>~150行]
+        TS[TokenService<br/>~180行]
+        NS[NotificationService<br/>~120行]
+        BIS[BoxIntegrationService<br/>~220行]
+    end
+    
+    US --> AS
+    US --> UMS
+    US --> RS
+    US --> TS
+    US --> NS
+    US --> BIS
+```
+
+#### 各サービスの責務
+
+| 新サービス | 責務 | 予想MMI |
+|-----------|------|---------|
+| AuthService | 認証・認可、ログイン処理 | 70 |
+| UserManagementService | ユーザーCRUD | 72 |
+| RoleService | ロール管理 | 68 |
+| TokenService | JWT/リフレッシュトークン管理 | 75 |
+| NotificationService | メール・通知 | 70 |
+| BoxIntegrationService | BOX OAuth連携 | 65 |
+
+#### 実装ステップ
+
+1. **インターフェース定義**
+   ```java
+   public interface AuthService {
+       AuthResult authenticate(LoginRequest request);
+       void logout(String userId);
+       boolean validateToken(String token);
+   }
+   ```
+
+2. **依存関係の整理**
+   - TokenServiceはAuthServiceから利用
+   - BoxIntegrationServiceはAuthServiceから利用
+   - NotificationServiceは独立
+
+3. **段階的移行**
+   - 新サービスを作成
+   - UserServiceからメソッドを移動
+   - 呼び出し元を更新
+   - テスト実行
+
+#### 期待効果
+
+| 指標 | 改善前 | 改善後 |
+|------|--------|--------|
+| Cohesion | 25 | 70 (+45) |
+| Coupling | 30 | 60 (+30) |
+| Independence | 40 | 65 (+25) |
+| Reusability | 45 | 68 (+23) |
+| **MMI** | **34.0** | **65.5** |
 
 ---
 
-## 2. ロードマップ
+### Phase 2: サービス間結合の解消（優先度: 高）
 
-### 2.1 全体タイムライン
+**対象**: AuditSetItemService, FileService
+**期間目安**: 小〜中規模
+
+#### 2.1 BOX連携の分離
+
+```mermaid
+graph LR
+    subgraph "現状"
+        ASIS[AuditSetItemService] --> BOX1[BOX API直接呼出]
+        FS[FileService] --> BOX2[BOX API直接呼出]
+    end
+    
+    subgraph "改善後"
+        ASIS2[AuditSetItemService] --> BAS[BoxAdapterService]
+        FS2[FileService] --> BAS
+        BAS --> BOX[BOX API]
+    end
+```
+
+#### 2.2 サービス間依存の解消
+
+```java
+// Before: 直接依存
+public class FileService {
+    @Autowired
+    private UserService userService; // 強結合
+}
+
+// After: インターフェース経由
+public class FileService {
+    @Autowired
+    private UserInfoProvider userInfoProvider; // 疎結合
+}
+```
+
+#### 期待効果
+
+| サービス | 改善前MMI | 改善後MMI |
+|----------|-----------|-----------|
+| AuditSetItemService | 41.5 | 58.0 |
+| FileService | 52.5 | 65.0 |
+
+---
+
+### Phase 3: ドメインサービスの統合（優先度: 中）
+
+**対象**: FileService, FolderService
+**期間目安**: 小規模
+
+#### 統合計画
+
+```mermaid
+graph TD
+    subgraph "現状"
+        FS[FileService<br/>MMI:52.5]
+        FOS[FolderService<br/>MMI:62.5]
+    end
+    
+    subgraph "統合後"
+        IS[ItemService<br/>目標MMI:68]
+        FH[FileHandler]
+        FOH[FolderHandler]
+    end
+    
+    FS --> IS
+    FOS --> IS
+    IS --> FH
+    IS --> FOH
+```
+
+#### 設計方針
+
+- Strategy パターンでファイル/フォルダ処理を抽象化
+- 共通インターフェース `ItemHandler` を定義
+- BOX APIアダプターを共有
+
+---
+
+### Phase 4: フロントエンド改善（優先度: 中）
+
+**対象**: pages/AuditSet
+**期間目安**: 小〜中規模
+
+#### コンポーネント分割
+
+```
+AuditSet/ (現状: 1000行超)
+├── AuditSetContainer.jsx (状態管理)
+├── AuditSetList.jsx (一覧表示)
+├── AuditSetDetail.jsx (詳細表示)
+├── AuditSetForm.jsx (作成・編集フォーム)
+└── hooks/
+    ├── useAuditSet.js
+    └── useAuditSetItem.js
+```
+
+#### 期待効果
+
+| コンポーネント | 改善前MMI | 改善後MMI |
+|---------------|-----------|-----------|
+| pages/AuditSet | 47.5 | 62.0 |
+
+---
+
+## 改善ロードマップ
 
 ```mermaid
 gantt
     title MMI改善ロードマップ
-    dateFormat  YYYY-MM
+    dateFormat  YYYY-MM-DD
+    
     section Phase 1
-    UserService分割           :p1-1, 2025-01, 2M
-    循環依存解消              :p1-2, 2025-02, 1M
-    テストカバレッジ向上       :p1-3, 2025-01, 3M
+    UserService分解設計      :a1, 2024-01-01, 5d
+    AuthService実装          :a2, after a1, 3d
+    UserManagementService    :a3, after a2, 3d
+    RoleService実装          :a4, after a3, 2d
+    TokenService実装         :a5, after a4, 3d
+    NotificationService      :a6, after a5, 2d
+    BoxIntegrationService    :a7, after a6, 3d
+    
     section Phase 2
-    BOX連携抽象化             :p2-1, 2025-04, 2M
-    リポジトリ整理            :p2-2, 2025-05, 2M
-    エラーハンドリング統一     :p2-3, 2025-06, 1M
+    BoxAdapterService設計    :b1, after a7, 3d
+    依存関係リファクタリング :b2, after b1, 5d
+    
     section Phase 3
-    DDD適用                   :p3-1, 2025-07, 3M
-    データベース分離準備       :p3-2, 2025-09, 2M
-    マイクロサービス境界確定   :p3-3, 2025-10, 2M
-```
-
-### 2.2 フェーズ別概要
-
-| Phase | 期間 | 主要施策 | 期待効果 |
-|-------|------|---------|---------|
-| Phase 1 | 0-3ヶ月 | 責務分離、依存解消 | MMI +7pt |
-| Phase 2 | 3-6ヶ月 | 抽象化、標準化 | MMI +10pt |
-| Phase 3 | 6-12ヶ月 | DDD適用、境界確定 | MMI +10pt |
-
----
-
-## 3. Phase 1: 責務分離と依存解消（0-3ヶ月）
-
-### 3.1 施策一覧
-
-| # | 施策 | 対象 | 優先度 | 工数 |
-|---|------|------|-------|------|
-| 1.1 | UserService分割 | UserService | 最優先 | 40h |
-| 1.2 | 循環依存解消 | AuditSetItemService, AuditSetService | 高 | 24h |
-| 1.3 | テストカバレッジ向上 | 全サービス | 高 | 60h |
-| 1.4 | 共通例外処理の導入 | 全サービス | 中 | 16h |
-
-### 3.2 UserService分割詳細
-
-**現状構造:**
-```
-UserService (1116行, 29メソッド)
-├── 認証系: login, loadUserByUsername, getToken, getNewAccessToken
-├── BOX連携: registerUserAndSaveToken, updateLatestToken
-├── ユーザー管理: createUser, deleteUser, getManagedUsers, editUser
-├── ロール管理: updateUserRole, createRoleUser
-├── パスワード: sendResetPasswordOTP, forgotPassword
-└── その他: updateLanguageForUser, getListOfExternalAuditors
-```
-
-**目標構造:**
-```
-com.scalar.events_log_tool.application.service.user/
-├── AuthenticationService.java (~300行)
-│   ├── login()
-│   ├── loadUserByUsername()
-│   ├── getToken()
-│   └── getNewAccessToken()
-├── BoxUserService.java (~350行)
-│   ├── registerUserAndSaveToken()
-│   ├── updateLatestToken()
-│   └── getBoxUserInfo()
-├── UserManagementService.java (~300行)
-│   ├── createUser()
-│   ├── deleteUser()
-│   ├── editUser()
-│   ├── getManagedUsers()
-│   └── updateUserRole()
-└── PasswordResetService.java (~150行)
-    ├── sendResetPasswordOTP()
-    └── forgotPassword()
-```
-
-**依存関係の整理:**
-```
-Before:
-UserService → [10 repositories + 5 services]
-
-After:
-AuthenticationService → UserRepository, JwtHelper
-BoxUserService → UserRepository, UserTokenRepository, BoxUtility
-UserManagementService → UserRepository, RoleUserRepository
-PasswordResetService → UserOptRepository, EmailUtility
-```
-
-**実装手順:**
-1. 新パッケージ `service.user` 作成
-2. インターフェース `UserServiceFacade` 定義（後方互換性）
-3. 各サービスクラス作成・テスト
-4. 既存呼び出し元の段階的移行
-5. 旧`UserService`の非推奨化・削除
-
-### 3.3 循環依存解消
-
-**現状の問題:**
-```
-AuditSetItemService → AuditSetService
-AuditSetService → (AuditSetItemRepositoryを直接利用)
-```
-
-**解決策: イベント駆動パターン**
-```
-// Before
-class AuditSetItemService {
-    private AuditSetService auditSetService;
-
-    void addItem() {
-        auditSetService.isItemExistInAuditSet(...);
-    }
-}
-
-// After
-class AuditSetItemService {
-    private AuditSetRepository auditSetRepository; // 直接参照
-
-    void addItem() {
-        auditSetRepository.existsByIdAndItemId(...);
-    }
-}
-```
-
-**代替案: インターフェース分離**
-```java
-// 共通インターフェース
-interface AuditSetQueryService {
-    boolean isItemExist(String auditSetId, Long itemId);
-}
-
-// 実装は別クラス
-class AuditSetQueryServiceImpl implements AuditSetQueryService {
-    // AuditSetItemServiceとAuditSetServiceが両方参照
-}
+    ItemService統合          :c1, after b2, 4d
+    
+    section Phase 4
+    FE コンポーネント分割    :d1, after c1, 5d
 ```
 
 ---
 
-## 4. Phase 2: 抽象化と標準化（3-6ヶ月）
+## MMIスコア推移予測
 
-### 4.1 施策一覧
+| フェーズ | 完了後MMI | 改善幅 |
+|---------|-----------|--------|
+| 現状 | 52.3 | - |
+| Phase 1完了 | 60.5 | +8.2 |
+| Phase 2完了 | 66.0 | +5.5 |
+| Phase 3完了 | 68.5 | +2.5 |
+| Phase 4完了 | 71.0 | +2.5 |
 
-| # | 施策 | 対象 | 優先度 | 工数 |
-|---|------|------|-------|------|
-| 2.1 | BOX連携層の抽象化 | BoxUtility, 各Service | 高 | 32h |
-| 2.2 | リポジトリ層の整理 | 全Repository | 高 | 40h |
-| 2.3 | エラーハンドリング統一 | 全Service | 中 | 24h |
-| 2.4 | ログ出力標準化 | 全Service | 低 | 16h |
-
-### 4.2 BOX連携層の抽象化
-
-**現状:**
-```java
-// 各サービスで直接BoxUtilityを使用
-class FileService {
-    @Lazy
-    private BoxAPIConnection connection;
-
-    void getFileDetails() {
-        BoxFile file = new BoxFile(connection, fileId);
-        file.getInfo("name", "size", "sha1");
-    }
-}
 ```
-
-**目標:**
-```java
-// インターフェース定義
-interface BoxApiClient {
-    FileInfo getFileInfo(String fileId, List<String> fields);
-    FolderInfo getFolderInfo(String folderId);
-    List<EventInfo> getEnterpriseEvents(String streamPosition);
-}
-
-// 実装
-class BoxApiClientImpl implements BoxApiClient {
-    private final BoxAPIConnection connection;
-
-    @Override
-    public FileInfo getFileInfo(String fileId, List<String> fields) {
-        BoxFile file = new BoxFile(connection, fileId);
-        return mapToFileInfo(file.getInfo(fields));
-    }
-}
-
-// テスト用モック
-class MockBoxApiClient implements BoxApiClient {
-    // テストデータを返す
-}
-```
-
-**利点:**
-- テスタビリティ向上
-- BOX SDKバージョン変更の影響を限定
-- 将来的な他ストレージ対応が容易
-
-### 4.3 リポジトリ層の整理
-
-**現状の問題:**
-- 22個のリポジトリが個別に存在
-- サービスが多数のリポジトリに直接依存
-- トランザクション境界が不明確
-
-**Aggregate Root パターン適用:**
-```
-Before:
-├── AuditSetRepository
-├── AuditSetItemRepository
-├── AuditSetCollaboratorsRepository
-└── AuditGrpAuditSetMappingRepository
-
-After:
-├── AuditSetAggregateRepository (Aggregate Root)
-│   └── 内部でItem, Collaborator, Mappingを管理
-├── AuditSetItemRepository (内部利用のみ)
-├── AuditSetCollaboratorsRepository (内部利用のみ)
-└── AuditGrpAuditSetMappingRepository (内部利用のみ)
+MMI Score Projection
+100 ┤
+ 90 ┤
+ 80 ┤                                    ┌─────────── 目標ライン
+ 70 ┤                              ╭─────┘  71.0
+ 60 ┤              ╭───────────────╯
+ 50 ┤──────────────╯  52.3
+ 40 ┤
+ 30 ┤
+    └──────┬──────┬──────┬──────┬──────┬────
+          現状  Phase1 Phase2 Phase3 Phase4
 ```
 
 ---
 
-## 5. Phase 3: DDD適用と境界確定（6-12ヶ月）
+## リスクと軽減策
 
-### 5.1 施策一覧
-
-| # | 施策 | 対象 | 優先度 | 工数 |
-|---|------|------|-------|------|
-| 3.1 | 値オブジェクト導入 | Model層 | 高 | 40h |
-| 3.2 | ドメインサービス整理 | Service層 | 高 | 48h |
-| 3.3 | 境界付けられたコンテキスト定義 | 全体 | 高 | 32h |
-| 3.4 | データベース論理分割 | Repository層 | 中 | 40h |
-
-### 5.2 値オブジェクト導入例
-
-```java
-// Before
-class User {
-    private String userEmail;
-    private String roleJson;
-}
-
-// After
-class User {
-    private Email email;
-    private UserRole role;
-}
-
-// 値オブジェクト
-@Value
-class Email {
-    String value;
-
-    public Email(String value) {
-        if (!isValidEmail(value)) {
-            throw new InvalidEmailException(value);
-        }
-        this.value = value;
-    }
-}
-
-@Value
-class UserRole {
-    UserRoleType type;
-    Set<Permission> permissions;
-
-    public boolean canManageUsers() {
-        return type == UserRoleType.AUDIT_ADMIN;
-    }
-}
-```
-
-### 5.3 境界付けられたコンテキスト
-
-```mermaid
-graph TB
-    subgraph "Identity & Access Context"
-        IAC[User Management]
-        IAC2[Authentication]
-        IAC3[Authorization]
-    end
-
-    subgraph "Audit Context"
-        AC[Audit Set Management]
-        AC2[Collaborator Management]
-        AC3[Audit Group Management]
-    end
-
-    subgraph "File Context"
-        FC[File/Folder Operations]
-        FC2[Version Management]
-    end
-
-    subgraph "Event Context"
-        EC[Event Log]
-        EC2[Event Search]
-    end
-
-    subgraph "Verification Context"
-        VC[Tampering Detection]
-        VC2[Asset Management]
-    end
-
-    IAC --> AC
-    AC --> FC
-    FC --> EC
-    AC --> VC
-```
+| リスク | 影響度 | 軽減策 |
+|--------|--------|--------|
+| UserService分解時の既存機能破壊 | 高 | 包括的な統合テスト実施 |
+| BOX API変更による影響 | 中 | アダプターパターンで隔離 |
+| フロントエンド状態管理の複雑化 | 中 | Redux Toolkit活用 |
+| リファクタリング中のサービス停止 | 低 | フィーチャーフラグ活用 |
 
 ---
 
-## 6. 施策依存関係
+## 成功指標
 
-```mermaid
-graph TD
-    subgraph "Phase 1"
-        P1_1[UserService分割]
-        P1_2[循環依存解消]
-        P1_3[テストカバレッジ]
-    end
+### 定量指標
+- [ ] 全サービスのMMI 60以上
+- [ ] 循環依存 0件
+- [ ] God Class 0件
+- [ ] サービス間直接依存 50%削減
 
-    subgraph "Phase 2"
-        P2_1[BOX連携抽象化]
-        P2_2[リポジトリ整理]
-        P2_3[エラーハンドリング]
-    end
-
-    subgraph "Phase 3"
-        P3_1[値オブジェクト]
-        P3_2[境界確定]
-        P3_3[データベース分割]
-    end
-
-    P1_1 --> P2_1
-    P1_2 --> P2_2
-    P1_3 --> P2_1
-    P1_3 --> P2_2
-
-    P2_1 --> P3_1
-    P2_2 --> P3_2
-    P2_3 --> P3_1
-
-    P3_1 --> P3_3
-    P3_2 --> P3_3
-```
+### 定性指標
+- [ ] 新サービス単独でのデプロイ可能
+- [ ] テストカバレッジ 80%以上
+- [ ] コードレビュー承認率向上
 
 ---
 
-## 7. モニタリング計画
+## 次のステップ
 
-### 7.1 メトリクス収集
-
-| メトリクス | 収集頻度 | ツール | 目標値 |
-|-----------|---------|-------|-------|
-| MMIスコア | 月次 | 手動評価 | 継続的改善 |
-| コードカバレッジ | CI毎 | JaCoCo | 80%以上 |
-| 循環依存数 | 週次 | jdepend | 0 |
-| サービスあたり行数 | 月次 | cloc | 500行以下 |
-
-### 7.2 レビューポイント
-
-| 時点 | 確認内容 | 判定基準 |
-|------|---------|---------|
-| Phase 1完了 | UserService分割完了 | 新サービス各300行以下 |
-| Phase 2完了 | 循環依存ゼロ | jdepend警告なし |
-| Phase 3完了 | マイクロサービス準備 | MMI 75以上 |
-
----
-
-## 8. リスクと緩和策
-
-### 8.1 リスク一覧
-
-| リスク | 確率 | 影響 | 緩和策 |
-|-------|------|------|-------|
-| 機能退行 | 高 | 高 | 包括的なテストスイート作成 |
-| スケジュール遅延 | 中 | 中 | 段階的リリース、優先順位付け |
-| チーム負荷 | 中 | 中 | リファクタリング専任時間確保 |
-| 仕様理解不足 | 中 | 低 | ドメインエキスパートとの定期MTG |
-
-### 8.2 ロールバック計画
-
-- 各Phase完了時にリリースタグ作成
-- Feature Flagによる新旧実装切り替え
-- データベースマイグレーションは後方互換維持
-
----
-
-## 9. 成功基準
-
-### 9.1 Phase 1 成功基準
-
-- [ ] UserServiceが4つ以下のサービスに分割
-- [ ] 各新サービスが400行以下
-- [ ] 循環依存が2つ以下に削減
-- [ ] 単体テストカバレッジ60%以上
-
-### 9.2 Phase 2 成功基準
-
-- [ ] BoxApiClientインターフェース導入
-- [ ] リポジトリ依存が各サービス5つ以下
-- [ ] 統一例外ハンドリング適用
-- [ ] 循環依存ゼロ
-
-### 9.3 Phase 3 成功基準
-
-- [ ] 5つの境界付けられたコンテキスト定義
-- [ ] 主要値オブジェクト10個以上導入
-- [ ] MMIスコア75以上
-- [ ] 各コンテキストが独立テスト可能
-
----
-
-*Generated: 2025-12-26*
-*Source: scalar-event-log-fetcher-main*
+1. **Phase 3: ドメインマッピング** で境界づけられたコンテキストを特定
+2. **Phase 4: マイクロサービス設計** でターゲットアーキテクチャを決定
+3. 本改善計画をターゲットアーキテクチャに合わせて調整

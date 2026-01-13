@@ -1,103 +1,68 @@
 {
     "project": {
         "name": "Scalar Auditor for BOX",
-        "version": "1.0.0",
-        "created_at": "2025-12-26",
-        "updated_at": "2025-12-26"
+        "version": "2.0",
+        "created_at": "2026-01-13T00:00:00Z",
+        "updated_at": "2026-01-13T00:00:00Z"
     },
     "source": {
-        "path": "scalar-event-log-fetcher-main",
-        "type": "monorepo",
-        "languages": ["Java", "JavaScript", "JSX"],
-        "frameworks": ["Spring Boot 3.2.1", "React 18", "Vite"]
+        "path": "./SampleCode",
+        "type": "full-stack-application",
+        "languages": ["Java", "JavaScript", "JSX", "TypeScript"],
+        "frameworks": ["Spring Boot", "React JS", "Redux", "Vite"]
+    },
+    "components": {
+        "backend": {
+            "path": "Scalar-Box-Event-Log-Tool",
+            "language": "Java",
+            "framework": "Spring Boot",
+            "database": "Cassandra (via ScalarDB)",
+            "file_count": 167
+        },
+        "frontend_web": {
+            "path": "Scalar-Box-WebApp",
+            "language": "JavaScript/JSX",
+            "framework": "React + Vite + Redux"
+        },
+        "frontend_integration": {
+            "path": "Scalar-WebApp-Integration-Menu",
+            "language": "JavaScript/JSX",
+            "framework": "React"
+        },
+        "setup": {
+            "path": "Scalar-Box-Event-Log-Tool-Setup",
+            "description": "ScalarDL contracts and client setup"
+        }
+    },
+    "integrations": {
+        "box_api": {
+            "app1": "Client Credentials (Event Log Fetching)",
+            "app2": "OAuth 2.0 (User Operations)"
+        },
+        "scalardb": "Database management layer",
+        "scalardl": "File validation and tampering detection"
     },
     "analysis": {
         "status": "completed",
-        "modules_count": 5,
-        "domains_count": 6,
+        "modules_count": 4,
+        "java_files": 167,
+        "frontend_files": 128,
+        "documentation_files": 13,
+        "entities_count": 20,
+        "services_count": 10,
         "controllers_count": 9,
-        "services_count": 12,
-        "repositories_count": 22,
-        "entities_count": 20
-    },
-    "agents": {
-        "system_analyzer": { "status": "completed" },
-        "mmi_evaluator": { "status": "completed" },
-        "domain_mapper": { "status": "completed" },
-        "microservice_architect": { "status": "completed" },
-        "domain_storyteller": { "status": "completed" }
-    },
-    "mmi": {
-        "overall_score": 48.6,
-        "maturity_level": "低中成熟",
-        "cohesion_avg": 2.2,
-        "coupling_avg": 2.0,
-        "independence_avg": 2.5,
-        "reusability_avg": 2.7,
-        "modules_evaluated": 10
+        "repositories_count": 19,
+        "dtos_count": 47,
+        "enums_count": 11,
+        "database_tables": 17,
+        "rest_apis": 48,
+        "user_roles": 3,
+        "collaborator_roles": 4
     },
     "outputs": {
-        "00_summary": [
-            "project_metadata.json",
-            "executive-summary.md"
-        ],
-        "01_analysis": [
-            "system-overview.md",
-            "ubiquitous-language.md",
-            "actors-roles-permissions.md",
-            "domain-code-mapping.md"
-        ],
-        "02_evaluation": [
-            "mmi-overview.md",
-            "mmi-by-module.md",
-            "mmi-improvement-plan.md"
-        ],
-        "03_design": [
-            "domain-analysis.md",
-            "context-map.md",
-            "system-mapping.md",
-            "scalardb_architecture.md",
-            "scalardb_schema.md",
-            "scalardb_transaction.md",
-            "scalardb_migration.md",
-            "target_architecture.md",
-            "transformation_plan.md",
-            "operations_plan.md"
-        ],
-        "04_stories": [
-            "domain-stories.md"
-        ],
-        "graph": [
-            "schema.md",
-            "statistics.md"
-        ]
-    },
-    "scalardb": {
-        "deploy_mode": "ScalarDB Cluster",
-        "transaction_manager": "Consensus Commit",
-        "isolation_level": "SERIALIZABLE",
-        "storage_strategy": "Multi-storage",
-        "namespaces": {
-            "identity": "PostgreSQL",
-            "audit": "PostgreSQL",
-            "file": "PostgreSQL",
-            "event": "Cassandra",
-            "coordinator": "PostgreSQL"
-        },
-        "tables_count": 20,
-        "migration_phases": 4
-    },
-    "domains": {
-        "bounded_contexts": 6,
-        "core_domains": ["Audit Management", "Event Tracking", "Integrity Verification"],
-        "supporting_domains": ["Identity & Access", "File Management"],
-        "integration_domains": ["BOX Integration"],
-        "context_patterns": {
-            "partnership": 1,
-            "customer_supplier": 3,
-            "open_host_service": 1,
-            "anti_corruption_layer": 1,
-            "conformist": 1
-        }
+        "system_overview": "reports/01_analysis/system-overview.md",
+        "ubiquitous_language": "reports/01_analysis/ubiquitous-language.md",
+        "actors_roles_permissions": "reports/01_analysis/actors-roles-permissions.md",
+        "domain_code_mapping": "reports/01_analysis/domain-code-mapping.md"
     }
 }
