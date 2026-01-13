@@ -1,443 +1,348 @@
-# コンテキストマップ (Context Map)
+# コンテキストマップ
 
-## 1. コンテキスト関係図
+## 概要
 
-### 1.1 全体マップ
+Scalar Auditor for BOXシステムの境界づけられたコンテキスト間の関係を定義します。
+
+---
+
+## コンテキストマップ図
 
 ```mermaid
 graph TB
     subgraph "Core Domain"
         AM[Audit Management<br/>監査管理]
-        IV[Integrity Verification<br/>整合性検証]
-        ET[Event Tracking<br/>イベント追跡]
+        VER[Verification<br/>検証]
     end
-
+    
     subgraph "Supporting Domain"
-        IA[Identity & Access<br/>認証認可]
-        FM[File Management<br/>ファイル管理]
+        EVT[Event<br/>イベント]
+        ITEM[Item<br/>アイテム]
+        ID[Identity<br/>アイデンティティ]
     end
-
-    subgraph "External"
-        BI[BOX Integration<br/>BOX連携]
-        BOX[(BOX Platform)]
+    
+    subgraph "Generic Domain"
+        INT[Integration<br/>統合]
+        NOTIF[Notification<br/>通知]
     end
-
-    %% Core Domain内の関係
-    AM -->|Partnership| IV
-    AM -->|Customer-Supplier| ET
-    IV -->|Customer-Supplier| ET
-
-    %% Supporting → Core
-    IA -->|Open Host Service| AM
-    IA -->|Open Host Service| FM
-    FM -->|Customer-Supplier| AM
-    FM -->|Customer-Supplier| ET
-
-    %% Integration → All
-    BI -->|Anti-corruption Layer| FM
-    BI -->|Anti-corruption Layer| IA
-    BI -.->|Conformist| BOX
-
-    style AM fill:#e1f5fe
-    style IV fill:#e1f5fe
-    style ET fill:#e1f5fe
-    style IA fill:#fff3e0
-    style FM fill:#fff3e0
-    style BI fill:#fce4ec
-    style BOX fill:#f5f5f5
-```
-
-### 1.2 データフロー図
-
-```mermaid
-flowchart LR
-    subgraph External
-        BOX[BOX Platform]
+    
+    subgraph "External Systems"
+        BOX[BOX API]
+        SDL[ScalarDL]
+        SMTP[SMTP Server]
     end
+    
+    %% Core relationships
+    AM -->|顧客-供給者| EVT
+    AM -->|顧客-供給者| ITEM
+    AM -->|パートナーシップ| VER
+    VER -->|腐敗防止層| SDL
+    
+    %% Supporting relationships
+    EVT -->|準拠者| INT
+    ITEM -->|準拠者| INT
+    INT -->|腐敗防止層| BOX
+    
+    %% Identity as shared kernel
+    ID -.->|共有カーネル| AM
+    ID -.->|共有カーネル| VER
+    ID -.->|共有カーネル| EVT
+    
+    %% Notification
+    NOTIF -->|腐敗防止層| SMTP
+    ID -->|公開ホスト| NOTIF
 
-    subgraph System["Scalar Auditor for BOX"]
-        subgraph Integration
-            BI[BOX Integration]
-        end
-
-        subgraph Core
-            AM[Audit Management]
-            IV[Integrity Verification]
-            ET[Event Tracking]
-        end
-
-        subgraph Supporting
-            IA[Identity & Access]
-            FM[File Management]
-        end
-    end
-
-    BOX <-->|OAuth/API| BI
-    BI -->|File Info| FM
-    BI -->|User Info| IA
-    BI -->|Events| ET
-
-    IA -->|Auth Token| AM
-    IA -->|Auth Token| FM
-
-    FM -->|File Metadata| AM
-    FM -->|File Events| ET
-
-    AM -->|Audit Items| IV
-    AM -->|Audit Events| ET
-
-    IV -->|Verification Results| ET
+    classDef core fill:#f9f,stroke:#333,stroke-width:2px
+    classDef support fill:#bbf,stroke:#333
+    classDef generic fill:#bfb,stroke:#333
+    classDef external fill:#fbb,stroke:#333,stroke-dasharray:5 5
+    
+    class AM,VER core
+    class EVT,ITEM,ID support
+    class INT,NOTIF generic
+    class BOX,SDL,SMTP external
 ```
 
 ---
 
-## 2. コンテキスト間関係パターン
+## コンテキスト関係の詳細
 
-### 2.1 パートナーシップ (Partnership)
+### 1. Audit Management ↔ Verification（パートナーシップ）
+
+**関係タイプ**: Partnership（パートナーシップ）
+
+両チームが対等な立場で協調し、APIと要件を共同で決定。
 
 ```mermaid
-graph LR
-    AM[Audit Management] <-->|Partnership| IV[Integrity Verification]
+sequenceDiagram
+    participant AM as Audit Management
+    participant VER as Verification
+    participant SDL as ScalarDL
+    
+    AM->>VER: validateAuditSet(auditSetId)
+    VER->>VER: getItemsForValidation()
+    loop 各アイテム
+        VER->>SDL: validateAsset(assetId)
+        SDL-->>VER: ValidationResult
+    end
+    VER-->>AM: AuditSetValidationReport
 ```
 
-| 項目 | 内容 |
-|------|------|
-| **上流** | Audit Management |
-| **下流** | Integrity Verification |
-| **関係性** | 相互依存・協調開発 |
-| **統合ポイント** | 監査アイテムの整合性検証 |
-| **共有モデル** | AuditSetItem, AssetVerificationResult |
-| **調整方法** | 共同設計、変更時は両チームで合意 |
-
-**インターフェース定義:**
+**共有インターフェース**:
 ```java
-// 共有インターフェース
-interface AuditItemVerification {
-    VerificationResult verifyItem(AuditSetItem item);
-    List<VerificationResult> verifyAuditSet(String auditSetId);
-    void registerAsset(AuditSetItem item);
+public interface ValidationService {
+    ValidationResult validateItem(String itemId);
+    AuditSetValidationReport validateAuditSet(String auditSetId);
+    TamperingStatus getItemStatus(String itemId);
 }
 ```
 
 ---
 
-### 2.2 顧客-供給者 (Customer-Supplier)
+### 2. Audit Management → Event（顧客-供給者）
 
-#### 2.2.1 Audit Management → Event Tracking
+**関係タイプ**: Customer-Supplier（顧客-供給者）
 
-```mermaid
-graph LR
-    AM[Audit Management<br/>Supplier] -->|Events| ET[Event Tracking<br/>Customer]
-```
-
-| 項目 | 内容 |
-|------|------|
-| **供給者** | Audit Management |
-| **顧客** | Event Tracking |
-| **関係性** | 顧客のニーズに応じてイベントを発行 |
-| **契約** | 監査操作イベントの発行 |
-
-**イベント契約:**
-```java
-// 発行イベント
-record AuditSetCreatedEvent(String auditSetId, String userId, Instant createdAt);
-record AuditItemAddedEvent(String auditSetId, Long itemId, String itemType);
-record AuditItemVerifiedEvent(String auditSetId, Long itemId, VerificationStatus status);
-```
-
-#### 2.2.2 File Management → Audit Management
+Audit ManagementがCustomer（顧客）、EventがSupplier（供給者）。
 
 ```mermaid
-graph LR
-    FM[File Management<br/>Supplier] -->|File Info| AM[Audit Management<br/>Customer]
+sequenceDiagram
+    participant AM as Audit Management
+    participant EVT as Event
+    
+    AM->>EVT: getEventHistory(auditSetId, dateRange)
+    EVT->>EVT: filterEventsByItems()
+    EVT-->>AM: List<EventLog>
+    
+    AM->>EVT: getItemEvents(itemId)
+    EVT-->>AM: List<ItemEvent>
 ```
 
-| 項目 | 内容 |
-|------|------|
-| **供給者** | File Management |
-| **顧客** | Audit Management |
-| **関係性** | ファイルメタデータの提供 |
-| **契約** | ファイル情報取得API |
-
-**契約インターフェース:**
+**供給者API**:
 ```java
-interface FileInfoProvider {
-    FileInfo getFileInfo(String fileId);
+public interface EventQueryService {
+    List<EventLog> getEventsByAuditSet(String auditSetId, DateRange range);
+    List<ItemEvent> getEventsByItem(String itemId);
+    List<AuditorLog> getAuditorLogs(String auditSetId);
+}
+```
+
+---
+
+### 3. Audit Management → Item（顧客-供給者）
+
+**関係タイプ**: Customer-Supplier（顧客-供給者）
+
+```mermaid
+sequenceDiagram
+    participant AM as Audit Management
+    participant ITEM as Item
+    
+    AM->>ITEM: getItemDetails(itemId)
+    ITEM-->>AM: ItemDetails
+    
+    AM->>ITEM: getItemsByFolder(folderId)
+    ITEM-->>AM: List<Item>
+```
+
+**供給者API**:
+```java
+public interface ItemQueryService {
+    ItemDetails getItem(String itemId);
+    List<Item> getItemsByFolder(String folderId);
     List<FileVersion> getFileVersions(String fileId);
-    String getFileSha1(String fileId);
+    List<Item> getFileCopies(String sha1Hash);
 }
 ```
 
 ---
 
-### 2.3 オープンホストサービス (Open Host Service)
+### 4. Integration → BOX API（腐敗防止層）
+
+**関係タイプ**: Anti-Corruption Layer（腐敗防止層）
+
+外部BOX APIとの統合を隔離し、内部モデルへの変換を担当。
+
+```mermaid
+sequenceDiagram
+    participant INT as Integration
+    participant ACL as AntiCorruptionLayer
+    participant BOX as BOX API
+    
+    INT->>ACL: fetchEventStream(position)
+    ACL->>BOX: GET /events?stream_position=...
+    BOX-->>ACL: BoxEventResponse
+    ACL->>ACL: translateToInternalModel()
+    ACL-->>INT: List<InternalEvent>
+```
+
+**腐敗防止層の実装**:
+```java
+public class BoxEventTranslator {
+    public InternalEvent translate(BoxEvent boxEvent) {
+        return InternalEvent.builder()
+            .eventId(boxEvent.getEventId())
+            .eventType(mapEventType(boxEvent.getEventType()))
+            .itemId(boxEvent.getSource().getId())
+            .timestamp(boxEvent.getCreatedAt())
+            .userId(boxEvent.getCreatedBy().getId())
+            .build();
+    }
+    
+    private EventType mapEventType(String boxEventType) {
+        return switch(boxEventType) {
+            case "ITEM_UPLOAD" -> EventType.UPLOAD;
+            case "ITEM_MOVE" -> EventType.MOVE;
+            // ... mapping
+        };
+    }
+}
+```
+
+---
+
+### 5. Verification → ScalarDL（腐敗防止層）
+
+**関係タイプ**: Anti-Corruption Layer（腐敗防止層）
+
+ScalarDL APIとの統合を隔離。
+
+```mermaid
+sequenceDiagram
+    participant VER as Verification
+    participant ACL as ScalarDLAdapter
+    participant SDL as ScalarDL
+    
+    VER->>ACL: registerAsset(itemData)
+    ACL->>ACL: convertToContract()
+    ACL->>SDL: execute(PutAssetContract, args)
+    SDL-->>ACL: ContractExecutionResult
+    ACL-->>VER: AssetRegistrationResult
+    
+    VER->>ACL: validateAsset(assetId)
+    ACL->>SDL: validate(assetId)
+    SDL-->>ACL: ValidationResult
+    ACL->>ACL: translateResult()
+    ACL-->>VER: TamperingStatus
+```
+
+---
+
+### 6. Identity（共有カーネル）
+
+**関係タイプ**: Shared Kernel（共有カーネル）
+
+全コンテキストで共有されるユーザー・ロール情報。
+
+**共有モデル**:
+```java
+// 全コンテキストで共有
+public record UserInfo(
+    String userId,
+    String email,
+    String name,
+    Set<Role> roles
+) {}
+
+public enum Role {
+    AUDIT_ADMIN,
+    GENERAL_USER,
+    EXTERNAL_AUDITOR
+}
+```
+
+**注意点**:
+- 共有カーネルは最小限に保つ
+- 変更時は全コンテキストへの影響を検討
+- イベント駆動で同期を検討
+
+---
+
+## コンテキスト間通信パターン
+
+### 同期通信（現状）
+
+| 呼び出し元 | 呼び出し先 | パターン |
+|-----------|-----------|----------|
+| Audit Management | Event | REST API |
+| Audit Management | Item | REST API |
+| Audit Management | Verification | REST API |
+| Item | Integration (BOX) | REST API |
+| Verification | Integration (ScalarDL) | gRPC |
+
+### 推奨非同期通信（将来）
+
+| イベント発行元 | イベント | 購読者 |
+|--------------|---------|--------|
+| Item | ItemCreated | Audit Management, Event |
+| Item | ItemModified | Verification, Event |
+| Audit Management | AuditSetCreated | Event |
+| Verification | ValidationCompleted | Audit Management |
+
+---
+
+## チーム境界とコンテキスト
+
+### 推奨チーム構成
 
 ```mermaid
 graph TB
-    IA[Identity & Access<br/>Open Host Service]
-    IA -->|Public API| AM[Audit Management]
-    IA -->|Public API| FM[File Management]
-    IA -->|Public API| ET[Event Tracking]
+    subgraph "Platform Team"
+        ID[Identity Context]
+        INT[Integration Context]
+        NOTIF[Notification]
+    end
+    
+    subgraph "Audit Team"
+        AM[Audit Management]
+        VER[Verification]
+    end
+    
+    subgraph "Data Team"
+        EVT[Event Context]
+        ITEM[Item Context]
+    end
 ```
 
-| 項目 | 内容 |
-|------|------|
-| **提供者** | Identity & Access |
-| **消費者** | 全コンテキスト |
-| **サービス** | 認証・認可API |
-| **プロトコル** | JWT Token, Role-Based Access |
-
-**公開API:**
-```java
-// 認証サービス
-interface AuthenticationService {
-    AuthToken authenticate(Credentials credentials);
-    AuthToken refreshToken(String refreshToken);
-    void logout(String userId);
-}
-
-// 認可サービス
-interface AuthorizationService {
-    boolean hasPermission(String userId, Permission permission);
-    Set<Role> getUserRoles(String userId);
-    boolean canAccessAuditSet(String userId, String auditSetId);
-}
-```
+| チーム | 担当コンテキスト | 責務 |
+|-------|----------------|------|
+| Platform Team | Identity, Integration, Notification | 基盤サービス |
+| Audit Team | Audit Management, Verification | コアビジネス |
+| Data Team | Event, Item | データ管理 |
 
 ---
 
-### 2.4 腐敗防止層 (Anti-corruption Layer)
+## データ整合性戦略
 
-```mermaid
-graph LR
-    subgraph "Internal Model"
-        FM[File Management]
-        IA[Identity & Access]
-    end
+### 結果整合性の採用
 
-    subgraph "Anti-corruption Layer"
-        ACL[ACL Adapter]
-    end
-
-    subgraph "External"
-        BI[BOX Integration]
-        BoxPlatform[(BOX Platform)]
-    end
-
-    FM <--> ACL
-    IA <--> ACL
-    ACL <--> BI
-    BI <--> BoxPlatform
-```
-
-| 項目 | 内容 |
-|------|------|
-| **内部モデル** | File, Folder, User (ドメインモデル) |
-| **外部モデル** | BoxFile, BoxFolder, BoxUser (BOX SDK) |
-| **変換層** | BoxApiClient, BoxModelMapper |
-| **目的** | BOX SDK変更からドメインモデルを保護 |
-
-**ACL実装例:**
-```java
-// Anti-corruption Layer
-class BoxApiClientAdapter implements ExternalStorageClient {
-    private final BoxAPIConnection connection;
-    private final BoxModelMapper mapper;
-
-    @Override
-    public FileInfo getFileInfo(String fileId) {
-        BoxFile boxFile = new BoxFile(connection, fileId);
-        BoxFile.Info info = boxFile.getInfo("name", "size", "sha1", "modified_at");
-        return mapper.toFileInfo(info);  // BOXモデル → ドメインモデル
-    }
-}
-
-// モデル変換
-class BoxModelMapper {
-    FileInfo toFileInfo(BoxFile.Info boxInfo) {
-        return FileInfo.builder()
-            .id(boxInfo.getID())
-            .name(boxInfo.getName())
-            .size(boxInfo.getSize())
-            .sha1(boxInfo.getSha1())
-            .modifiedAt(boxInfo.getModifiedAt().toInstant())
-            .build();
-    }
-}
-```
-
----
-
-### 2.5 順応者 (Conformist)
-
-```mermaid
-graph LR
-    BI[BOX Integration] -.->|Conformist| BOX[(BOX Platform API)]
-```
-
-| 項目 | 内容 |
-|------|------|
-| **順応者** | BOX Integration |
-| **上流** | BOX Platform |
-| **関係性** | BOX APIの変更に完全に従う |
-| **リスク** | BOX API変更時の影響大 |
-| **緩和策** | ACL層での変換・バージョン管理 |
-
----
-
-## 3. 統合パターン詳細
-
-### 3.1 同期統合
-
-```mermaid
-sequenceDiagram
-    participant C as Controller
-    participant AM as Audit Management
-    participant FM as File Management
-    participant BI as BOX Integration
-    participant BoxPlatform as BOX Platform
-
-    C->>AM: addItemToAuditSet(fileId)
-    AM->>FM: getFileInfo(fileId)
-    FM->>BI: fetchFileDetails(fileId)
-    BI->>BoxPlatform: GET /files/{fileId}
-    BoxPlatform-->>BI: BoxFile.Info
-    BI-->>FM: FileInfo
-    FM-->>AM: FileInfo
-    AM->>AM: createAuditSetItem()
-    AM-->>C: AuditSetItem
-```
-
-### 3.2 イベント駆動統合（目標状態）
+コンテキスト間では結果整合性を採用し、Sagaパターンで長時間トランザクションを管理。
 
 ```mermaid
 sequenceDiagram
     participant AM as Audit Management
-    participant EB as Event Bus
-    participant ET as Event Tracking
-    participant IV as Integrity Verification
-
-    AM->>EB: publish(AuditItemAddedEvent)
-    par Event Tracking
-        EB->>ET: consume(AuditItemAddedEvent)
-        ET->>ET: logEvent()
-    and Integrity Verification
-        EB->>IV: consume(AuditItemAddedEvent)
-        IV->>IV: scheduleVerification()
+    participant ITEM as Item
+    participant VER as Verification
+    
+    AM->>AM: createAuditSet()
+    AM->>ITEM: addItemToAuditSet()
+    ITEM-->>AM: success
+    AM->>VER: registerForMonitoring()
+    
+    alt 成功
+        VER-->>AM: success
+        AM->>AM: commitAuditSet()
+    else 失敗
+        VER-->>AM: failure
+        AM->>ITEM: removeItem() [補償]
+        AM->>AM: rollbackAuditSet()
     end
 ```
 
 ---
 
-## 4. コンテキスト境界の実装
+## 次のステップ
 
-### 4.1 パッケージ構造（目標）
-
-```
-com.scalar.auditor/
-├── identity/                    # Identity & Access Context
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   └── infrastructure/
-│
-├── audit/                       # Audit Management Context
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   └── infrastructure/
-│
-├── file/                        # File Management Context
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   └── infrastructure/
-│
-├── event/                       # Event Tracking Context
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   └── infrastructure/
-│
-├── verification/                # Integrity Verification Context
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   └── infrastructure/
-│
-├── box/                         # BOX Integration Context
-│   ├── api/
-│   ├── application/
-│   └── infrastructure/
-│       └── acl/                 # Anti-corruption Layer
-│
-└── shared/                      # Shared Kernel
-    ├── events/
-    └── types/
-```
-
-### 4.2 モジュール間通信
-
-| 通信タイプ | 使用箇所 | 実装方式 |
-|-----------|---------|---------|
-| 同期呼び出し | ファイル情報取得 | インターフェース注入 |
-| イベント発行 | 監査操作通知 | Spring Events |
-| 共有カーネル | 共通型・ID | 共有ライブラリ |
-
----
-
-## 5. 移行戦略
-
-### 5.1 フェーズ別移行
-
-```mermaid
-gantt
-    title コンテキスト分離ロードマップ
-    dateFormat YYYY-MM
-    section Phase 1
-    Identity分離      :p1-1, 2025-01, 2M
-    BOX ACL構築       :p1-2, 2025-02, 2M
-    section Phase 2
-    Audit分離         :p2-1, 2025-04, 3M
-    File分離          :p2-2, 2025-05, 2M
-    section Phase 3
-    Event分離         :p3-1, 2025-07, 2M
-    Verification分離  :p3-2, 2025-08, 2M
-```
-
-### 5.2 段階的インターフェース導入
-
-```java
-// Step 1: インターフェース定義
-interface AuditSetOperations {
-    AuditSetDto createAuditSet(CreateAuditSetCommand cmd);
-    void addItem(AddItemCommand cmd);
-}
-
-// Step 2: 既存実装をラップ
-class AuditSetOperationsAdapter implements AuditSetOperations {
-    private final AuditSetService legacyService;
-    // 委譲
-}
-
-// Step 3: 新実装に置き換え
-class AuditSetApplicationService implements AuditSetOperations {
-    // 新規実装
-}
-```
-
----
-
-## 6. リスクと対策
-
-| リスク | 影響 | 対策 |
-|-------|------|------|
-| 循環依存の残存 | 分離困難 | 依存逆転パターン適用 |
-| 共有データベース | 独立性低下 | スキーマ論理分割 |
-| トランザクション跨ぎ | データ不整合 | Sagaパターン検討 |
-| パフォーマンス劣化 | 応答遅延 | キャッシュ・非同期化 |
-
----
-
-*Generated: 2025-12-26*
-*Source: scalar-event-log-fetcher-main*
+1. **Phase 4: マイクロサービス設計** - 具体的なサービス境界と責務の定義
+2. **Phase 4.5: API設計** - REST/gRPC/イベントAPIの詳細設計
+3. **Phase 5: ScalarDB設計** - データアーキテクチャの最適化

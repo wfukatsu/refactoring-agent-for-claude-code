@@ -1,409 +1,312 @@
-# モジュール別MMI評価 (MMI by Module)
+# MMI モジュール別詳細評価
 
-## 1. スコアサマリー
+## 評価方法
 
-### 1.1 全モジュール一覧
-
-| モジュール | 行数 | メソッド数 | Cohesion | Coupling | Independence | Reusability | **MMI** |
-|-----------|-----|----------|:--------:|:--------:|:------------:|:-----------:|:-------:|
-| UserService | 1116 | 29 | 1 | 1 | 2 | 2 | **28** |
-| AuditSetItemService | 899 | 11 | 2 | 2 | 2 | 2 | **40** |
-| AuditSetService | 845 | 14 | 2 | 2 | 2 | 2 | **40** |
-| FileService | 555 | 11 | 2 | 2 | 3 | 3 | **48** |
-| AuditGroupService | 439 | 8 | 3 | 2 | 3 | 3 | **54** |
-| AuditSetCollaboratorService | 288 | 7 | 3 | 3 | 3 | 3 | **60** |
-| EventLogService | 222 | 6 | 4 | 3 | 3 | 4 | **68** |
-| AssetService | 199 | 5 | 3 | 3 | 2 | 3 | **54** |
-| FolderService | 115 | 2 | 3 | 3 | 3 | 3 | **60** |
-| CommonService | 33 | 3 | 4 | 4 | 4 | 4 | **80** |
-| **平均** | - | - | **2.2** | **2.0** | **2.5** | **2.7** | **48.6** |
-
-### 1.2 MMI計算式
-
-```
-MMI = ((0.3 × Cohesion + 0.3 × Coupling + 0.2 × Independence + 0.2 × Reusability) / 5) × 100
-```
+各モジュールを4軸（Cohesion, Coupling, Independence, Reusability）で評価し、
+重み付け（30%, 30%, 20%, 20%）でMMIスコアを算出します。
 
 ---
 
-## 2. 個別モジュール評価
+## バックエンドサービス詳細
 
-### 2.1 UserService
+### 1. UserService (MMI: 34.0 - 未成熟)
 
-**基本情報**
+**ファイル**: `service/UserService.java`
+**行数**: 1,118行
+**依存数**: 20+
 
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/UserService.java` |
-| 行数 | 1116 |
-| メソッド数 | 29 |
-| フィールド数 | 22 |
-| **MMI** | **28** (未成熟) |
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 25/100 | 6以上の責務が混在（認証、CRUD、ロール、トークン、メール、BOX連携） |
+| Coupling | 30/100 | 多数のリポジトリ・ユーティリティに依存、循環依存リスク |
+| Independence | 40/100 | 他サービスからの依存が多く、単独デプロイ困難 |
+| Reusability | 45/100 | 汎用ロジックとドメイン固有が混在 |
 
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 1 | 認証、BOX連携、ユーザー管理、メール送信、トークン管理など多数の責務が集中 |
-| Coupling | 1 | 10+リポジトリへの依存、他サービスとの双方向依存 |
-| Independence | 2 | BOX API、ScalarDBへの強依存 |
-| Reusability | 2 | BOX Platform固有ロジックが多く他システムでの再利用困難 |
-
-**主な責務（問題）**
-
-1. ユーザー認証・認可
-2. BOX OAuth連携
-3. ユーザーCRUD
-4. パスワードリセット・OTP
-5. メール送信
-6. トークン管理
-7. ロール管理
-8. 言語設定
-
-**改善提案**
-
+**責務分析**:
 ```
-UserService (1116行)
-    ↓ 分割
-├── AuthenticationService (~300行)
-│   └── ログイン、JWT発行、パスワード検証
-├── BoxUserService (~350行)
-│   └── BOX OAuth、トークン更新、ユーザー情報取得
-├── UserManagementService (~300行)
-│   └── CRUD、ロール管理、一覧取得
-└── PasswordResetService (~150行)
-    └── OTP生成、メール送信、パスワード変更
+UserService (God Class)
+├── 認証関連
+│   ├── login()
+│   ├── verifyPassword()
+│   └── handleOAuth()
+├── ユーザーCRUD
+│   ├── createUser()
+│   ├── updateUser()
+│   └── deleteUser()
+├── ロール管理
+│   ├── assignRole()
+│   ├── removeRole()
+│   └── getRoles()
+├── トークン管理
+│   ├── generateToken()
+│   ├── refreshToken()
+│   └── revokeToken()
+├── メール送信
+│   ├── sendOTP()
+│   └── sendWelcomeEmail()
+└── BOX連携
+    ├── syncBoxUser()
+    └── getBoxToken()
 ```
+
+**推奨分割**:
+1. `AuthenticationService` - 認証・認可
+2. `UserManagementService` - ユーザーCRUD
+3. `RoleService` - ロール管理
+4. `TokenService` - トークン管理
+5. `NotificationService` - メール送信
+6. `BoxIntegrationService` - BOX連携
 
 ---
 
-### 2.2 AuditSetItemService
+### 2. AuditSetService (MMI: 46.5 - 低中成熟度)
 
-**基本情報**
+**ファイル**: `service/AuditSetService.java`
+**行数**: 845行
+**依存数**: 12
 
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/AuditSetItemService.java` |
-| 行数 | 899 |
-| メソッド数 | 11 |
-| フィールド数 | 11 |
-| **MMI** | **40** (低中成熟) |
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 40/100 | 監査セット管理に集中しているが、コラボレーター管理も含む |
+| Coupling | 45/100 | CommonService、複数リポジトリに依存 |
+| Independence | 50/100 | 監査セットドメインとして独立可能だが依存多い |
+| Reusability | 55/100 | 監査セット操作は再利用可能 |
 
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 2 | アイテム管理、検証、監視ステータスの3責務が混在 |
-| Coupling | 2 | AuditSetService、AssetServiceへの依存 |
-| Independence | 2 | ScalarDB、ScalarDLへの依存 |
-| Reusability | 2 | 監査セット固有のロジック |
-
-**主な責務**
-
-1. アイテム追加・削除
-2. 監視ステータス管理
-3. 改ざん検証
-4. BOXアイテム情報取得
-
-**改善提案**
-
+**責務分析**:
 ```
-AuditSetItemService (899行)
-    ↓ 分割
-├── AuditSetItemCrudService (~400行)
-│   └── アイテムの追加・削除・一覧
-├── ItemMonitoringService (~250行)
-│   └── 監視ステータス管理
-└── ItemVerificationService (~250行)
-    └── 改ざん検証、検証結果管理
+AuditSetService
+├── 監査セットCRUD
+│   ├── createAuditSet()
+│   ├── updateAuditSet()
+│   └── deleteAuditSet()
+├── コラボレーター管理（分離候補）
+│   ├── addCollaborator()
+│   └── removeCollaborator()
+└── 所有者変更
+    └── changeOwner()
 ```
 
 ---
 
-### 2.3 AuditSetService
+### 3. AuditSetItemService (MMI: 41.5 - 低中成熟度)
 
-**基本情報**
+**ファイル**: `service/AuditSetItemService.java`
+**行数**: 902行
+**依存数**: 15
 
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/AuditSetService.java` |
-| 行数 | 845 |
-| メソッド数 | 14 |
-| フィールド数 | 11 |
-| **MMI** | **40** (低中成熟) |
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 35/100 | アイテム管理とBOX連携が混在 |
+| Coupling | 40/100 | AuditSetService、AssetServiceに強依存 |
+| Independence | 45/100 | 監査セットサービスなしでは動作不可 |
+| Reusability | 50/100 | 監査セットアイテム固有のロジック |
 
-**スコア詳細**
+**問題点**:
+- AuditSetServiceへの直接参照
+- BOX API呼び出しとビジネスロジックの混在
+- トランザクション境界が不明確
 
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 2 | CRUD、コラボレーター管理、グループ管理が混在 |
-| Coupling | 2 | 8つのリポジトリへの依存 |
-| Independence | 2 | 複数テーブルへのトランザクション |
-| Reusability | 2 | 監査セット固有のビジネスルール |
+---
 
-**主な責務**
+### 4. AuditGroupService (MMI: 57.5 - 中成熟度)
 
-1. 監査セットCRUD
-2. コラボレーター管理
-3. 監査グループとの関連管理
-4. ACL管理
+**ファイル**: `service/AuditGroupService.java`
+**行数**: 420行
+**依存数**: 7
 
-**改善提案**
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 55/100 | 監査グループ管理に集中 |
+| Coupling | 55/100 | 適度な依存関係 |
+| Independence | 60/100 | 比較的独立してデプロイ可能 |
+| Reusability | 65/100 | グループ管理ロジックは汎用的 |
+
+**良い点**:
+- 単一責任に近い設計
+- 依存関係が限定的
+- テスト容易性が高い
+
+---
+
+### 5. FileService (MMI: 52.5 - 低中成熟度)
+
+**ファイル**: `service/FileService.java`
+**行数**: 580行
+**依存数**: 10
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 50/100 | ファイル操作に集中だがUserService依存 |
+| Coupling | 50/100 | UserServiceへの不必要な依存 |
+| Independence | 55/100 | UserService分離後は独立可能 |
+| Reusability | 60/100 | ファイル操作は汎用的 |
+
+**問題点**:
+- `UserService`への依存（ユーザー情報取得のため）
+- BOX APIとのインターフェースが直接埋め込み
+
+---
+
+### 6. EventLogService (MMI: 72.5 - 中成熟度)
+
+**ファイル**: `service/EventLogService.java`
+**行数**: 350行
+**依存数**: 5
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 70/100 | イベントログ管理に特化 |
+| Coupling | 75/100 | リポジトリのみに依存 |
+| Independence | 70/100 | 独立してデプロイ可能 |
+| Reusability | 75/100 | イベント管理は他コンテキストでも利用可能 |
+
+**良い点**:
+- 明確な単一責任
+- 低い外部依存
+- マイクロサービス化の候補
+
+---
+
+### 7. AssetService (MMI: 67.5 - 中成熟度)
+
+**ファイル**: `service/AssetService.java`
+**行数**: 480行
+**依存数**: 6
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 65/100 | ScalarDL連携に特化 |
+| Coupling | 70/100 | ScalarDLリポジトリのみに依存 |
+| Independence | 65/100 | ScalarDL依存だが分離可能 |
+| Reusability | 70/100 | 検証ロジックは汎用的 |
+
+**良い点**:
+- 改ざん検知という明確な責務
+- 外部システム連携が適切にカプセル化
+
+---
+
+### 8. CommonService (MMI: 78.5 - 高成熟度)
+
+**ファイル**: `service/CommonService.java`
+**行数**: 280行
+**依存数**: 3
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 80/100 | 共通ユーティリティ機能に特化 |
+| Coupling | 85/100 | 最小限の依存 |
+| Independence | 75/100 | ユーティリティとして独立 |
+| Reusability | 70/100 | 複数サービスで再利用可能 |
+
+**注意点**:
+- ユーティリティクラスとして適切だが、サービス層にあるべきか検討
+
+---
+
+### 9. FolderService (MMI: 62.5 - 中成熟度)
+
+**ファイル**: `service/FolderService.java`
+**行数**: 420行
+**依存数**: 8
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 60/100 | フォルダ操作に集中 |
+| Coupling | 65/100 | FileServiceと類似の依存パターン |
+| Independence | 60/100 | FileServiceと統合検討可能 |
+| Reusability | 65/100 | フォルダ操作は汎用的 |
+
+---
+
+### 10. AuditSetCollaboratorService (MMI: 57.5 - 中成熟度)
+
+**ファイル**: `service/AuditSetCollaboratorService.java`
+**行数**: 380行
+**依存数**: 7
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 55/100 | コラボレーター管理に集中 |
+| Coupling | 60/100 | AuditSetServiceへの依存あり |
+| Independence | 55/100 | 監査セットと密結合 |
+| Reusability | 60/100 | コラボレーター管理は汎用化可能 |
+
+---
+
+## フロントエンドモジュール詳細
+
+### 1. pages/auth (MMI: 57.5)
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 60/100 | 認証画面に集中 |
+| Coupling | 55/100 | Redux storeとAPI hookに依存 |
+| Independence | 60/100 | 認証モジュールとして独立可能 |
+| Reusability | 55/100 | プロジェクト固有のUI |
+
+---
+
+### 2. pages/AuditSet (MMI: 47.5)
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 45/100 | 1000行超の大規模コンポーネント |
+| Coupling | 50/100 | 多数のサブコンポーネントに依存 |
+| Independence | 50/100 | 分割後は独立可能 |
+| Reusability | 45/100 | プロジェクト固有 |
+
+**問題点**:
+- コンポーネントが大きすぎる
+- 状態管理が複雑
+- サブコンポーネント分割が必要
+
+---
+
+### 3. redux (MMI: 60.0)
+
+| 軸 | スコア | 評価理由 |
+|----|--------|----------|
+| Cohesion | 65/100 | Slice単位で適切に分離 |
+| Coupling | 60/100 | 適度な依存関係 |
+| Independence | 55/100 | アプリ全体の状態管理 |
+| Reusability | 60/100 | Sliceパターンは再利用可能 |
+
+---
+
+## スコア分布図
 
 ```
-AuditSetService (845行)
-    ↓ 分割
-├── AuditSetCrudService (~350行)
-│   └── 作成・更新・削除・一覧
-├── AuditSetAccessService (~250行)
-│   └── コラボレーター管理、ACL
-└── AuditSetGroupService (~200行)
-    └── グループ関連付け
+         0    20    40    60    80   100
+         |     |     |     |     |     |
+UserService          ████████████░░░░░░░░░░░░░░░░░░░ 34.0 ❌
+AuditSetItemService  ████████████████░░░░░░░░░░░░░░░ 41.5
+AuditSetService      █████████████████████░░░░░░░░░░ 46.5
+FileService          ████████████████████████░░░░░░░ 52.5
+AuditGroupService    █████████████████████████████░░ 57.5
+AudSetCollabService  █████████████████████████████░░ 57.5
+FolderService        ██████████████████████████████░ 62.5
+AssetService         ████████████████████████████████ 67.5 ✓
+EventLogService      █████████████████████████████████ 72.5 ✓
+CommonService        ███████████████████████████████████ 78.5 ✓
+         |     |     |     |     |     |
+         0    20    40    60    80   100
+
+Legend: ❌ 要緊急対応  ✓ マイクロサービス化適格
 ```
 
----
+## 評価サマリー
 
-### 2.4 FileService
+### マイクロサービス化適格モジュール
+1. **EventLogService** (72.5) - イベント管理サービスとして独立可能
+2. **AssetService** (67.5) - 検証サービスとして独立可能
+3. **CommonService** (78.5) - 共有ライブラリとして提供
 
-**基本情報**
+### 要改善モジュール
+1. **UserService** (34.0) - 6サービスへの分割が必須
+2. **AuditSetItemService** (41.5) - BOX連携の分離が必要
+3. **AuditSetService** (46.5) - コラボレーター管理の分離
 
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/FileService.java` |
-| 行数 | 555 |
-| メソッド数 | 11 |
-| フィールド数 | 8 |
-| **MMI** | **48** (低中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 2 | ファイル詳細、バージョン、コピー、ログの複数責務 |
-| Coupling | 2 | UserService、BoxUtilityへの依存 |
-| Independence | 3 | BOX APIへの外部依存のみ |
-| Reusability | 3 | ファイル操作は比較的汎用的 |
-
-**改善提案**
-
-- `FileDetailsService`: ファイル詳細・メタデータ
-- `FileVersionService`: バージョン管理
-- `FileCollaboratorService`: コラボレーター情報
-
----
-
-### 2.5 AuditGroupService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/AuditGroupService.java` |
-| 行数 | 439 |
-| メソッド数 | 8 |
-| フィールド数 | 7 |
-| **MMI** | **54** (低中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 3 | グループ管理に集中しているが、メンバー管理も含む |
-| Coupling | 2 | 6つのリポジトリへの依存 |
-| Independence | 3 | 比較的独立したドメイン |
-| Reusability | 3 | グループ概念は汎用的 |
-
----
-
-### 2.6 AuditSetCollaboratorService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/AuditSetCollaboratorService.java` |
-| 行数 | 288 |
-| メソッド数 | 7 |
-| フィールド数 | 6 |
-| **MMI** | **60** (中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 3 | コラボレーター管理に集中 |
-| Coupling | 3 | 5つのリポジトリだが一方向依存 |
-| Independence | 3 | 監査セットとの関連のみ |
-| Reusability | 3 | コラボレーションパターンは汎用的 |
-
----
-
-### 2.7 EventLogService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/EventLogService.java` |
-| 行数 | 222 |
-| メソッド数 | 6 |
-| フィールド数 | 2 |
-| **MMI** | **68** (中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 4 | イベントログ取得に特化 |
-| Coupling | 3 | 2つのリポジトリのみ |
-| Independence | 3 | イベントデータへの読み取りのみ |
-| Reusability | 4 | 検索・フィルタリングロジックは汎用的 |
-
-**良い点**
-- 単一責務に近い設計
-- 少ない依存関係
-- クエリメソッドが明確
-
----
-
-### 2.8 AssetService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/AssetService.java` |
-| 行数 | 199 |
-| メソッド数 | 5 |
-| フィールド数 | 5 |
-| **MMI** | **54** (低中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 3 | ScalarDL連携に集中 |
-| Coupling | 3 | ScalarDL、BoxUtilityへの限定的依存 |
-| Independence | 2 | ScalarDL Auditor/Ledgerへの強依存 |
-| Reusability | 3 | 台帳操作は他システムでも利用可能 |
-
-**特記事項**
-- ScalarDLコントラクト呼び出しのラッパー
-- 改ざん検証のコア機能
-
----
-
-### 2.9 FolderService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/FolderService.java` |
-| 行数 | 115 |
-| メソッド数 | 2 |
-| フィールド数 | 3 |
-| **MMI** | **60** (中成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 3 | フォルダ操作に集中 |
-| Coupling | 3 | UserService、BoxUtilityへの限定的依存 |
-| Independence | 3 | BOX APIへの外部依存 |
-| Reusability | 3 | フォルダ一覧取得は汎用的 |
-
----
-
-### 2.10 CommonService
-
-**基本情報**
-
-| 項目 | 値 |
-|------|-----|
-| ファイル | `service/CommonService.java` |
-| 行数 | 33 |
-| メソッド数 | 3 |
-| フィールド数 | 1 |
-| **MMI** | **80** (高成熟) |
-
-**スコア詳細**
-
-| 軸 | スコア | 根拠 |
-|----|:-----:|------|
-| Cohesion | 4 | 権限チェックユーティリティに特化 |
-| Coupling | 4 | ObjectMapperのみに依存 |
-| Independence | 4 | 完全に独立した判定ロジック |
-| Reusability | 4 | 他コンテキストでも利用可能 |
-
-**良い点**
-- 小さく明確な責務
-- 最小限の依存
-- 純粋関数的な設計
-
----
-
-## 3. 依存関係マトリクス
-
-### 3.1 サービス間依存
-
-```
-                  US  ASI ASS FS  AGS ASC ELS AstS FoS CS
-UserService       -
-AuditSetItemSvc   X   -   X                   X
-AuditSetService   X       -
-FileService       X           -
-AuditGroupSvc     X               -
-AuditSetCollab    X               X   -
-EventLogService                           -
-AssetService                                  -
-FolderService     X                               -
-CommonService                                         -
-
-X = 依存あり
-```
-
-### 3.2 リポジトリ依存数
-
-| サービス | リポジトリ依存数 | 詳細 |
-|---------|----------------|------|
-| UserService | 10 | userRepo, roleUserRepo, tokenRepo, otpRepo, orgRepo, auditSetRepo, collaboratorRepo, groupRepo, userGroupRepo, auditorLogsRepo |
-| AuditSetService | 8 | auditSetRepo, collaboratorRepo, userRepo, auditorLogsRepo, groupRepo, userGroupRepo, mappingRepo, itemRepo |
-| AuditSetItemService | 6 | auditSetRepo, userRepo, itemRepo, assetSvc, statusRepo, collaboratorRepo |
-| FileService | 5 | userRepo, statusRepo, auditorLogsRepo, auditSetRepo, sha1Repo |
-| AuditGroupService | 6 | groupRepo, auditSetRepo, mappingRepo, userRepo, userGroupRepo |
-| AuditSetCollaboratorService | 4 | collaboratorRepo, auditSetRepo, userRepo |
-| EventLogService | 2 | eventsRepo, itemEventsRepo |
-| AssetService | 1 | scalardlRepo |
-| FolderService | 0 | (UserService経由) |
-| CommonService | 0 | なし |
-
----
-
-## 4. 改善優先度マトリクス
-
-```
-         緊急度 高 ←───────────────→ 低
-影響度   ┌─────────────────────────────────┐
-  高     │ UserService     │ AuditSetSvc  │
-         │ AuditSetItemSvc │ FileService  │
-         ├─────────────────┼──────────────┤
-  低     │ AuditGroupSvc   │ EventLogSvc  │
-         │ AssetService    │ CommonService│
-         └─────────────────┴──────────────┘
-```
-
-**優先順位:**
-1. UserService - 最優先で分割
-2. AuditSetItemService - 循環依存解消
-3. AuditSetService - リポジトリ依存削減
-4. FileService - BOX連携抽象化
-5. AuditGroupService - 標準化
-6. AssetService - インターフェース導入
-7. 他 - 維持
-
----
-
-*Generated: 2025-12-26*
-*Source: scalar-event-log-fetcher-main*
+### 統合検討モジュール
+- FileService + FolderService → ItemService への統合
+- AuditSetCollaboratorService → AuditSetService への統合またはAccess Controlサービス化

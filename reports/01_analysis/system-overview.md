@@ -1,409 +1,178 @@
-# Scalar Auditor for BOX - システム分析レポート
+# 現行システム概要
 
-**分析日**: 2025-12-26
-**対象**: scalar-event-log-fetcher-main
+## プロジェクト概要
 
----
+**Scalar Auditor for BOX** は、BOXアプリケーションと統合された監査ツールです。BOXで管理されるファイルのユーザーイベントログを外部に保存し、外部監査人がファイルの完全性を検証できるようにします。ScalarDBでデータを管理し、ScalarDLでファイル改ざんを検出します。
 
-## 1. プロジェクト概要
+## 技術スタック
 
-### 1.1 目的
-BOXアプリケーションと連携し、ユーザーイベントログをBOX外部に保存・管理するシステム。ファイルの改ざん検出機能を備え、外部監査人が重要ファイルを監査可能にする。
+### バックエンド
 
-### 1.2 主要機能
-| # | 機能 | 説明 |
-|---|------|------|
-| 1 | イベントログ保存・表示 | 日時/タイプ/ユーザーでフィルタリング可能 |
-| 2 | ファイル詳細表示 | メタデータ、バージョン、SHA1ハッシュ重複確認 |
-| 3 | ファイルバージョン管理 | 全バージョンの履歴表示 |
-| 4 | 組織ユーザーロール管理 | Audit Admin / General User |
-| 5 | 外部監査人管理 | 作成・更新・削除 |
-| 6 | Audit Set管理 | ファイル/フォルダのグループ化 |
-| 7 | Audit Group管理 | 監査人のグループ化 |
-| 8 | ファイル改ざん検出 | ScalarDL連携による検証 |
-| 9 | 外部監査人操作ログ | アクセスログの閲覧 |
+| 技術 | バージョン | 用途 |
+|-----|----------|------|
+| Java | 17 | メイン言語 |
+| Spring Boot | 3.2.1 | Webフレームワーク |
+| Spring Security | 3.2.x | 認証・認可 |
+| JWT (jjwt) | 0.11.5 | トークンベース認証 |
+| ScalarDB Cluster | 3.14.0 | 分散データベース管理 |
+| ScalarDL | 3.10.0 | 改ざん検知・台帳管理 |
+| Box Java SDK | 4.4.0 | BOX API連携 |
+| Lombok | - | コード生成 |
+| SpringDoc OpenAPI | 2.3.0 | API仕様書生成 |
 
----
+### フロントエンド（WebApp）
 
-## 2. 技術スタック
+| 技術 | バージョン | 用途 |
+|-----|----------|------|
+| React | 18.2.0 | UIフレームワーク |
+| Vite | 5.0.8 | ビルドツール |
+| Redux / Redux Toolkit | 2.1.0 | 状態管理 |
+| Material UI | 5.15.x | UIコンポーネント |
+| React Router | 6.22.0 | ルーティング |
+| i18next | 23.11.2 | 国際化（日英対応） |
+| Axios | 1.6.7 | HTTP通信 |
+| Box UI Elements | 19.0.0 | BOX UIコンポーネント |
+| Tailwind CSS | 3.4.1 | CSSフレームワーク |
 
-### 2.1 Backend
-| 項目 | 技術 |
-|------|------|
-| フレームワーク | Spring Boot 3.2.1 |
-| Java Version | 17 |
-| ビルドツール | Gradle |
-| 認証 | Spring Security + JWT |
-| API文書 | OpenAPI (springdoc) |
+### フロントエンド（Integration Menu）
 
-### 2.2 Frontend
-| 項目 | 技術 |
-|------|------|
-| フレームワーク | React 18 |
-| ビルドツール | Vite 5 |
-| 状態管理 | Redux Toolkit + Redux Persist |
-| UIライブラリ | MUI (Material-UI) v5 |
-| スタイリング | Tailwind CSS |
-| 国際化 | i18next |
-| Box SDK | box-ui-elements v19 |
+| 技術 | バージョン | 用途 |
+|-----|----------|------|
+| React | 18.x | UIフレームワーク |
+| Vite | - | ビルドツール |
+| i18next | - | 国際化 |
 
-### 2.3 Database / Infrastructure
-| 項目 | 技術 |
-|------|------|
-| Database | Cassandra |
-| Transaction管理 | ScalarDB Cluster 3.14.0 |
-| 改ざん検出 | ScalarDL 3.10.0 |
-| コンテナ | Kubernetes |
+### データベース
 
----
+| 技術 | バージョン | 用途 |
+|-----|----------|------|
+| Cassandra | - | NoSQLデータストア |
+| ScalarDB | 3.14.0 | 分散トランザクション管理 |
+| ScalarDL | 3.10.0 | 改ざん検知用台帳 |
 
-## 3. サブプロジェクト構成
+### インフラ
 
-```
-scalar-event-log-fetcher-main/
-├── Scalar-Box-Event-Log-Tool/       # Spring Boot Backend
-│   ├── src/main/java/               # Javaソースコード
-│   ├── src/main/resources/          # 設定ファイル
-│   ├── schema-loader/               # ScalarDBスキーマ
-│   └── build.gradle                 # ビルド設定
-├── Scalar-Box-WebApp/               # React Frontend（メイン）
-│   ├── src/pages/                   # ページコンポーネント
-│   ├── src/redux/                   # 状態管理
-│   └── src/api/                     # API呼び出し
-├── Scalar-WebApp-Integration-Menu/  # React Frontend（統合メニュー）
-├── K8s-scalardb-cluster/            # Kubernetes設定
-│   └── scalardb-cluster-custom-values.yaml
-├── ScalarDL-Event-Log-Fetcher-Setup/
-├── Scalar-Box-Event-Log-Tool-Setup/
-└── Documentation/                   # ドキュメント
-```
+| 技術 | 用途 |
+|-----|------|
+| Kubernetes | コンテナオーケストレーション |
+| Helm | ScalarDB Clusterデプロイ |
 
----
-
-## 4. Backendアーキテクチャ
-
-### 4.1 パッケージ構成
-```
-com.scalar.events_log_tool.application/
-├── controller/     # REST API エンドポイント (9クラス)
-├── service/        # ビジネスロジック (10クラス)
-├── business/       # Controller-Service間レイヤー (8クラス)
-├── repository/     # データアクセス層 (19クラス)
-├── model/          # エンティティ (17クラス)
-├── dto/            # Data Transfer Objects (47クラス)
-├── responsedto/    # レスポンス用DTO (17クラス)
-├── config/         # 設定クラス
-├── security/       # JWT認証・Spring Security
-├── constant/       # 定数・Enum (11クラス)
-├── exception/      # カスタム例外
-└── utility/        # ユーティリティ (4クラス)
-```
-
-### 4.2 主要コントローラー
-| コントローラー | 責務 |
-|--------------|------|
-| UserController | ユーザー認証・管理 |
-| AuditSetController | 監査セットCRUD |
-| AuditSetItemController | 監査セットアイテム管理 |
-| AuditSetCollaboratorController | コラボレーター管理 |
-| AuditGroupController | 監査グループ管理 |
-| EventLogController | イベントログ取得 |
-| FileController | ファイル操作・改ざん検証 |
-| FolderController | フォルダ操作 |
-| ItemController | アイテム共通操作 |
-
-### 4.3 主要サービス
-| サービス | 責務 | 主要メソッド |
-|---------|------|-------------|
-| UserService | ユーザー認証・管理 | login, createUser, deleteUser |
-| AuditSetService | 監査セット管理 | createAuditSet, deleteAuditSet, updateCollaborators |
-| AuditGroupService | グループ管理 | - |
-| EventLogService | ログ検索 | getEventsByDateRange, getEventsByDateRangeAndUser |
-| FileService | ファイル詳細 | getFileDetails, getFileCopies, getFileVersions |
-| AssetService | ScalarDL連携 | addAsset, getTamperingStatus |
-
----
-
-## 5. Frontendアーキテクチャ
-
-### 5.1 ページ構成
-| ディレクトリ | 機能 |
-|------------|------|
-| auth/ | 認証（ログイン、パスワードリセット） |
-| AuditSet/ | 監査セット管理 |
-| AuditorsAndGroups/ | 監査人・グループ管理 |
-| ViewAllEventHistory/ | イベント履歴表示 |
-| ViewItemsUnderAudit/ | 監査対象アイテム表示 |
-| ExternalAuditorPage/ | 外部監査人用ページ |
-| UserRole/ | ユーザーロール管理 |
-| ApplicationSetting/ | アプリケーション設定 |
-
-### 5.2 状態管理
-- Redux Toolkit使用
-- Redux Persistによる永続化
-- redux-loggerによるデバッグ
-
----
-
-## 6. データベース設計
-
-### 6.1 テーブル一覧（15テーブル）
-
-#### イベント関連
-| テーブル | パーティションキー | 説明 |
-|---------|-----------------|------|
-| events | yyyy_mm_dd | BOXイベントログ（日付パーティション） |
-| item_events | item_id | アイテム別イベント |
-| auditor_logs | audit_set_id | 外部監査人操作ログ |
-
-#### ユーザー関連
-| テーブル | パーティションキー | 説明 |
-|---------|-----------------|------|
-| user | user_email | ユーザーマスタ |
-| role_user | role_name | ロール別ユーザー |
-| user_token | user_email | JWT/OAuth2トークン |
-| user_otp | user_email | ワンタイムパスワード |
-| organization | org_id | 組織マスタ |
-
-#### 監査関連
-| テーブル | パーティションキー | 説明 |
-|---------|-----------------|------|
-| audit_set | audit_set_id | 監査セット |
-| audit_set_collaborators | user_email | 監査セット協力者 |
-| audit_group | audit_group_id | 監査グループ |
-| user_audit_group | user_email | ユーザー別グループ |
-| audit_grp_audit_set_mapping | audit_group_id | グループ-セット関連 |
-| auditset_folder_file_mapping | audit_set_id | セット-ファイル関連 |
-
-#### ファイル関連
-| テーブル | パーティションキー | 説明 |
-|---------|-----------------|------|
-| item_status | item_id | 改ざん検証ステータス |
-| items_by_sha1 | sha1_hash | SHA1ハッシュ別ファイル |
-| position_tracker | user_id | イベント取得位置 |
-
-### 6.2 ER図（概念）
-
-```mermaid
-erDiagram
-    USER ||--o{ ROLE_USER : has
-    USER ||--o{ USER_TOKEN : has
-    USER ||--o{ USER_OTP : has
-    USER }o--|| ORGANIZATION : belongs_to
-
-    AUDIT_SET ||--o{ AUDIT_SET_COLLABORATORS : has
-    AUDIT_SET ||--o{ AUDITSET_FOLDER_FILE_MAPPING : contains
-    AUDIT_SET ||--o{ AUDITOR_LOGS : has
-
-    AUDIT_GROUP ||--o{ USER_AUDIT_GROUP : has
-    AUDIT_GROUP ||--o{ AUDIT_GRP_AUDIT_SET_MAPPING : maps
-
-    EVENTS ||--o{ ITEM_EVENTS : relates
-    ITEM_STATUS ||--o{ ITEMS_BY_SHA1 : identifies
-```
-
----
-
-## 7. 外部システム連携
-
-### 7.1 Box API連携
-- **認証方式**: OAuth 2.0（Client Credentials Grant）
-- **SDK**: Box Java SDK 4.4.0
-- **イベント取得**: Enterprise Event API
-- **ファイル操作**: Files/Folders API
-
-### 7.2 ScalarDL連携
-- **目的**: ファイル改ざん検出
-- **契約**: クライアント証明書ベース
-- **機能**: Asset登録、改ざん検証
-
----
-
-## 8. セキュリティ
-
-### 8.1 認証・認可
-- JWT (JSON Web Token) ベース認証
-- Spring Security統合
-- ロールベースアクセス制御（RBAC）
-
-### 8.2 ユーザーロール
-| ロール | 権限 |
-|-------|------|
-| Audit Admin | 全機能へのアクセス |
-| General User | 閲覧・限定的な操作 |
-| External Auditor | 割り当てられたAudit Setのみ |
-
----
-
-## 9. 国際化対応
-
-- 日本語 (`messages_ja.properties`)
-- 英語 (`messages.properties`)
-- Frontend: i18next使用
-
----
-
-## 10. まとめ
-
-### 10.1 強み
-- ScalarDB/ScalarDLによる信頼性の高いデータ管理
-- Box連携による既存ワークフローとの統合
-- ファイル改ざん検出機能
-- 多言語対応
-
-### 10.2 技術的特徴
-- モノレポ構成（Backend + 複数Frontend）
-- マイクロサービス対応基盤（ScalarDB Cluster）
-- Kubernetes対応
-
----
-
-## 11. サービス層詳細分析
-
-### 11.1 サービスクラス一覧（コード行数順）
-
-| サービス | 行数 | 責務 | 複雑度 |
-|---------|-----|------|-------|
-| `UserService` | 1116 | ユーザー認証・管理、BOX連携、トークン管理 | 高 |
-| `AuditSetItemService` | 899 | 監査セットアイテム管理、検証、監視ステータス管理 | 高 |
-| `AuditSetService` | 845 | 監査セットCRUD、コラボレーター管理 | 中 |
-| `FileService` | 554 | ファイル詳細取得、バージョン管理、BOX連携 | 中 |
-| `AuditGroupService` | 438 | 監査グループCRUD、メンバー管理 | 中 |
-| `AuditSetCollaboratorService` | 286 | コラボレーター権限管理、オーナー変更 | 低 |
-| `EventLogService` | 220 | イベントログ検索、フィルタリング | 低 |
-| `AssetService` | 197 | ScalarDL資産管理、改ざん検証 | 中 |
-| `FolderService` | 113 | BOXフォルダ操作 | 低 |
-| `CommonService` | 31 | 共通ユーティリティ（Owner/CoOwner判定） | 低 |
-
-### 11.2 リポジトリ層詳細（22クラス）
-
-#### コアリポジトリ
-| リポジトリ | テーブル | 主要操作 |
-|-----------|---------|---------|
-| `UserRepository` | user | create, getByUserEmail, getUserList, createAndDelete |
-| `AuditSetRepository` | audit_set | create, get, getAuditSetList, getMyAuditSetList |
-| `EventsRepository` | events | create, getAllEvents, getEventsByDate |
-| `AuditGroupRepository` | audit_group | create, getgroupList, getAuditGroup, update |
-
-#### 関連テーブルリポジトリ
-| リポジトリ | テーブル | 関連 |
-|-----------|---------|------|
-| `AuditSetCollaboratorsRepository` | audit_set_collaborators | AuditSet-User |
-| `AuditSetItemRepository` | audit_set_item | AuditSet-Item |
-| `AuditGrpAuditSetMappingRepository` | audit_grp_audit_set_mapping | AuditGroup-AuditSet |
-| `UserAuditGroupRepository` | user_audit_group | User-AuditGroup |
-
-#### ファイル/イベント関連
-| リポジトリ | テーブル | 用途 |
-|-----------|---------|------|
-| `ItemEventsRepository` | item_events | アイテム別イベント |
-| `ItemStatusRepository` | item_status | 改ざん検証ステータス |
-| `ItemsBySha1Repository` | items_by_sha1 | ハッシュ重複検出 |
-| `AuditorLogsRepository` | auditor_logs | 外部監査人ログ |
-| `ScalardlRepository` | (ScalarDL) | 台帳操作 |
-
----
-
-## 12. アーキテクチャ図
-
-### 12.1 システム全体構成
+## アーキテクチャ概要
 
 ```mermaid
 graph TB
-    subgraph "Frontend"
-        WebApp[Scalar-Box-WebApp<br/>React 18]
-        IntMenu[Integration Menu<br/>React]
+    subgraph "Frontend Applications"
+        WebApp["Scalar-Box-WebApp<br/>(React + Redux)"]
+        IntegrationMenu["Scalar-WebApp-Integration-Menu<br/>(BOX統合メニュー)"]
     end
 
     subgraph "Backend"
-        API[Spring Boot API<br/>Scalar-Box-Event-Log-Tool]
+        SpringBoot["Spring Boot API Server<br/>(Scalar-Box-Event-Log-Tool)"]
+        Security["Spring Security<br/>(JWT認証)"]
+    end
 
-        subgraph "Application Layer"
-            Controller[Controllers<br/>9クラス]
-            Business[Business Layer<br/>8クラス]
-            Service[Service Layer<br/>12クラス]
-            Repository[Repository Layer<br/>22クラス]
-        end
+    subgraph "External Services"
+        BoxAPI1["BOX API<br/>(Client Credentials)<br/>イベントログ取得"]
+        BoxAPI2["BOX API<br/>(OAuth 2.0)<br/>ファイル操作"]
     end
 
     subgraph "Data Layer"
-        ScalarDB[(ScalarDB Cluster<br/>3.14.0)]
-        ScalarDL[ScalarDL<br/>3.10.0]
-        Cassandra[(Cassandra)]
+        ScalarDB["ScalarDB Cluster<br/>(分散トランザクション)"]
+        ScalarDL["ScalarDL<br/>(改ざん検知)"]
+        Cassandra["Cassandra<br/>(データストア)"]
     end
 
-    subgraph "External"
-        BoxAPI[BOX API<br/>OAuth 2.0]
-    end
-
-    WebApp --> API
-    IntMenu --> API
-    Controller --> Business
-    Business --> Service
-    Service --> Repository
-    Repository --> ScalarDB
-    Service --> ScalarDL
+    WebApp --> SpringBoot
+    IntegrationMenu --> SpringBoot
+    SpringBoot --> Security
+    SpringBoot --> BoxAPI1
+    SpringBoot --> BoxAPI2
+    SpringBoot --> ScalarDB
+    SpringBoot --> ScalarDL
     ScalarDB --> Cassandra
-    Service --> BoxAPI
+    ScalarDL --> Cassandra
 ```
 
-### 12.2 改ざん検出フロー
+## モジュール構成
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant FileController
-    participant AssetService
-    participant ScalardlRepository
-    participant ScalarDL
-    participant BoxAPI as BOX
+### バックエンド（Java）
 
-    User->>FileController: checkTamperingStatus(itemId)
-    FileController->>BoxAPI: getFileInfo()
-    BoxAPI-->>FileController: SHA-1ハッシュ
-    FileController->>AssetService: getTamperingStatus()
-    AssetService->>ScalardlRepository: validateLedger()
-    ScalardlRepository->>ScalarDL: validateLedger()
-    ScalarDL-->>ScalardlRepository: ValidationResult
-    ScalardlRepository-->>AssetService: 検証結果
-    AssetService-->>FileController: TamperingStatusType
-    FileController-->>User: TAMPERED/NOT_TAMPERED
-```
+| パッケージ | 責務 | ファイル数 |
+|----------|------|----------|
+| controller | REST APIエンドポイント | 9 |
+| service | ビジネスロジック | 10 |
+| repository | データアクセス（ScalarDB） | 19 |
+| model | ドメインエンティティ | 20 |
+| dto | データ転送オブジェクト | 47 |
+| responsedto | APIレスポンス | 15 |
+| constant | 定数・Enum定義 | 11 |
+| security | 認証・認可 | 5 |
+| business | ビジネスヘルパー | 8 |
+| utility | ユーティリティ | 4 |
+| exception | 例外処理 | 3 |
+| config | アプリケーション設定 | 1 |
 
----
+### フロントエンド（WebApp）
 
-## 13. 課題と技術的負債
+| ディレクトリ | 責務 | 主要ファイル |
+|------------|------|------------|
+| pages/auth | 認証画面 | LoginandSignup, ForgotPassword, OtpComponent |
+| pages/AuditSet | 監査セット管理 | AuditSet, AuditDailogBox, ItemViewFileandFolders |
+| pages/AuditorsAndGroups | 外部監査人・グループ管理 | AuditorsAndGroups, AddExternalAuditor, AddAuditGroup |
+| pages/ExternalAuditorPage | 外部監査人向け画面 | ExternalAuditor, ExternalAuditorCard, Validating |
+| pages/UserRole | ユーザーロール管理 | UserRole |
+| pages/ViewAllEventHistory | イベント履歴表示 | ViewAllEventHistory, TableList |
+| pages/ViewItemsUnderAudit | 監査対象アイテム表示 | ViewItemsUnderAudit |
+| redux/reducerSlice | 状態管理 | authSlice, tokenSlice, folderAndFileSlice |
+| hooks | カスタムフック | useAxiosPrivate, useRefreshToken |
+| i18n | 国際化 | config, locales/en, locales/ja |
 
-### 13.1 アーキテクチャ上の課題
+## データベーステーブル
 
-| 課題 | 影響 | 優先度 |
-|-----|------|-------|
-| 巨大なServiceクラス（UserService: 1116行） | 保守性・可読性低下 | 高 |
-| Controller-Business-Service層の責務境界曖昧 | 重複コード、テスト困難 | 中 |
-| トランザクション管理の分散 | データ整合性リスク | 高 |
-| BOX API依存の強結合 | テスト困難、変更影響大 | 中 |
-| DTO/ResponseDTOの増大（64クラス） | メンテナンス負荷 | 低 |
+| テーブル名 | 説明 | パーティションキー |
+|-----------|------|------------------|
+| events | BOXイベントログ | yyyy_mm_dd |
+| item_events | アイテム別イベント | item_id |
+| audit_set | 監査セット定義 | audit_set_id |
+| audit_set_collaborators | 監査セット共同作業者 | user_email |
+| auditset_folder_file_mapping | 監査セット-アイテムマッピング | audit_set_id |
+| user | ユーザー情報 | user_email |
+| role_user | ロール-ユーザーマッピング | role_name |
+| audit_group | 監査グループ | audit_group_id |
+| user_audit_group | ユーザー-監査グループマッピング | user_email |
+| audit_grp_audit_set_mapping | 監査グループ-監査セットマッピング | audit_group_id |
+| item_status | アイテム検証状態 | item_id |
+| items_by_sha1 | SHA1ハッシュ別アイテム | sha1_hash |
+| auditor_logs | 外部監査人操作ログ | audit_set_id |
+| position_tracker | イベント取得位置 | user_id |
+| user_token | ユーザートークン | user_email |
+| user_otp | OTPコード | user_email |
+| organization | 組織情報 | org_id |
 
-### 13.2 推奨される改善
+## 外部連携
 
-1. **サービス分割**
-   - UserService → UserAuthService, UserProfileService, BoxIntegrationService
-   - AuditSetService → AuditSetCoreService, AuditSetCollaboratorService
+| 連携先 | 連携方式 | 用途 | 実装箇所 |
+|-------|---------|------|---------|
+| BOX API (Event Stream) | Client Credentials Grant | イベントログ取得 | EventLogService |
+| BOX API (File Operations) | OAuth 2.0 | ファイル操作・詳細取得 | FileService, FolderService |
+| ScalarDB Cluster | gRPC | トランザクション管理 | Repository層 |
+| ScalarDL | gRPC | ファイル改ざん検証 | AssetService |
+| SMTP Server | SMTP | パスワードリセットOTP送信 | EmailUtility |
 
-2. **ドメイン境界の明確化**
-   - DDDに基づくBounded Context分割
-   - Audit, User, Event, Integrationドメインの分離
+## 課題・技術的負債
 
-3. **外部連携の抽象化**
-   - BOX API用アダプタ層（Port/Adapter）導入
-   - Mock対応によるテスタビリティ向上
+| 課題 | 深刻度 | 影響範囲 | 推奨対応 |
+|-----|-------|---------|---------|
+| CORS設定が全許可（*） | 高 | セキュリティ | 本番環境では適切なオリジンを指定 |
+| 大量ファイルの検証時間 | 中 | ユーザビリティ | 非同期処理・バッチ処理の導入 |
+| モノリシックなサービス層 | 中 | 保守性 | ドメインサービスの分離 |
+| DTOとModelの重複 | 低 | コード重複 | MapStructなどのマッパー導入 |
+| テストカバレッジ | 中 | 品質 | サービス層のテスト拡充 |
+| エラーメッセージの国際化 | 低 | UX | バックエンドのi18n対応 |
 
-4. **イベント駆動化の検討**
-   - 非同期処理の導入
-   - イベントソーシング検討（ScalarDL活用）
+## ファイル統計
 
----
-
-*Generated: 2025-12-26*
-*Analysis Tool: Refactoring Agent v1.0*
-*Source: scalar-event-log-fetcher-main*
+- **Javaファイル**: 167ファイル
+- **フロントエンドファイル**: 128ファイル（WebApp + Integration Menu）
+- **設計書ファイル**: 13ファイル
+- **テストファイル**: 7ファイル（サービス層のみ）
